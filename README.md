@@ -1,6 +1,6 @@
 # Interaktive Werkzeuge Physik
 
-Vier eigenständige HTML-Seiten für den Physikunterricht. Sie laufen
+Fünf eigenständige HTML-Seiten für den Physikunterricht. Sie laufen
 vollständig im Browser, laden nichts nach und erheben keine Daten.
 
 Veröffentlicht über GitHub Pages, damit sie auf iPads in Safari geöffnet

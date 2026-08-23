@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Farbfilterlabor</title>
+<style>
+  :root{
+    color-scheme:dark;
+    --bg:#111318;
+    --panel:#1b1f27;
+    --line:#343b49;
+    --text:#f2f4f8;
+    --dim:#aeb7c8;
+    --accent:#70b7ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    font-size:18px;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  button{font:inherit}
+  #menu{
+    width:min(920px,100%);
+    margin:0 auto;
+    padding:calc(22px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
+  }
+  h1{font-size:clamp(30px,5vw,48px);line-height:1.05;margin:0 0 8px}
+  .intro{color:var(--dim);line-height:1.45;margin:0 0 24px;max-width:700px}
+  .modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .mode{
+    min-height:176px;
+    border:2px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    background:var(--panel);
+    color:var(--text);
+    text-align:left;
+    cursor:pointer;
+    touch-action:manipulation;
+  }
+  .mode:focus-visible{outline:4px solid var(--accent);outline-offset:3px}
+  .mode strong{display:block;font-size:26px;margin:0 0 8px}
+  .mode span{display:block;color:var(--dim);line-height:1.35}
+  .preview{height:68px;border-radius:10px;margin:16px 0 0;border:1px solid #697386}
+  .white{background:#fff}
+  .rgb{background:linear-gradient(90deg,#f00 0 33.333%,#0f0 33.333% 66.666%,#00f 66.666% 100%)}
+  .check{
+    margin:24px 0 0;
+    padding:18px 20px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+  }
+  .check h2{font-size:19px;margin:0 0 10px}
+  .check ol{margin:0;padding-left:25px;color:var(--dim);line-height:1.55}
+  .check b{color:var(--text)}
+  .status{margin-top:14px;color:var(--dim);font-size:15px}
+  #stage{position:fixed;inset:0;display:none;background:#fff;z-index:20;overflow:hidden;touch-action:manipulation}
+  #field{position:absolute;inset:0;background:#fff}
+  #field.rgb-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+  #field.rgb-grid .band:nth-child(1){background:#f00}
+  #field.rgb-grid .band:nth-child(2){background:#0f0}
+  #field.rgb-grid .band:nth-child(3){background:#00f}
+  #controls{
+    position:absolute;
+    left:50%;
+    bottom:calc(16px + env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    display:flex;
+    gap:10px;
+    padding:9px;
+    border-radius:16px;
+    background:rgba(10,12,16,.86);
+    box-shadow:0 6px 30px rgba(0,0,0,.35);
+    transition:opacity .25s ease;
+  }
+  #controls.hidden{opacity:0;pointer-events:none}
+  #controls button{
+    min-width:92px;
+    min-height:56px;
+    border:1px solid #687284;
+    border-radius:11px;
+    background:#202631;
+    color:#fff;
+    font-weight:650;
+    cursor:pointer;
+  }
+  #controls button.active{background:#fff;color:#111;border-color:#fff}
+  #modeLabel{
+    position:absolute;
+    top:calc(14px + env(safe-area-inset-top));
+    left:50%;
+    transform:translateX(-50%);
+    padding:8px 14px;
+    border-radius:10px;
+    background:rgba(10,12,16,.78);
+    color:#fff;
+    font-weight:650;
+    transition:opacity .25s ease;
+    pointer-events:none;
+  }
+  #modeLabel.hidden{opacity:0}
+  #selftest{display:none;margin-top:18px;padding:14px;background:#151923;border:1px solid var(--line);border-radius:12px}
+  #selftest.show{display:block}
+  #selftest code{display:block;color:#d8e8ff;margin:4px 0}
+  @media(max-width:650px){
+    .modes{grid-template-columns:1fr}
+    .mode{min-height:148px}
+    #controls{width:calc(100% - 24px);justify-content:center}
+    #controls button{min-width:0;flex:1}
+  }
+</style>
+</head>
+<body>
+<main id="menu">
+  <h1>Farbfilterlabor</h1>
+  <p class="intro">Das iPad dient ausschließlich als Lichtquelle. Wählen Sie das Feld, das auf Ihrem Lernbogen verlangt wird.</p>
+
+  <section class="modes" aria-label="Lichtfelder">
+    <button class="mode" id="openWhite" type="button">
+      <strong>Weißfeld</strong>
+      <span>Für Einzelfilter und mehrere Filter hintereinander</span>
+      <span class="preview white" aria-hidden="true"></span>
+    </button>
+    <button class="mode" id="openRgb" type="button">
+      <strong>RGB-Vergleich</strong>
+      <span>Für das Durchlassprofil eines einzelnen Filters</span>
+      <span class="preview rgb" aria-hidden="true"></span>
+    </button>
+  </section>
+
+  <section class="check">
+    <h2>Vor dem Versuch</h2>
+    <ol>
+      <li>Helligkeit auf <b>Maximum</b> stellen.</li>
+      <li><b>True Tone</b>, <b>Night Shift</b> und automatische Helligkeit ausschalten.</li>
+      <li>Filter direkt auf den Bildschirm legen und immer relativ vergleichen.</li>
+    </ol>
+  </section>
+  <p class="status" id="wakeStatus">Der Bildschirm wird nach dem Öffnen eines Felds nach Möglichkeit wach gehalten.</p>
+  <section id="selftest" aria-live="polite"></section>
+</main>
+
+<section id="stage" aria-label="Aktives Lichtfeld">
+  <div id="field"></div>
+  <div id="modeLabel">Weißfeld</div>
+  <nav id="controls" aria-label="Lichtfeld wechseln">
+    <button id="back" type="button">Zurück</button>
+    <button id="white" type="button">Weiß</button>
+    <button id="rgb" type="button">RGB</button>
+  </nav>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  var menu = document.getElementById("menu");
+  var stage = document.getElementById("stage");
+  var field = document.getElementById("field");
+  var controls = document.getElementById("controls");
+  var modeLabel = document.getElementById("modeLabel");
+  var wakeStatus = document.getElementById("wakeStatus");
+  var hideTimer = null;
+  var wakeLock = null;
+  var currentMode = "white";
+
+  function renderMode(mode){
+    currentMode = mode === "rgb" ? "rgb" : "white";
+    field.className = currentMode === "rgb" ? "rgb-grid" : "";
+    field.innerHTML = currentMode === "rgb"
+      ? '<div class="band" aria-label="Rot"></div><div class="band" aria-label="Grün"></div><div class="band" aria-label="Blau"></div>'
+      : "";
+    document.getElementById("white").classList.toggle("active", currentMode === "white");
+    document.getElementById("rgb").classList.toggle("active", currentMode === "rgb");
+    modeLabel.textContent = currentMode === "white" ? "Weißfeld" : "RGB-Vergleich";
+    showControls();
+  }
+
+  function openStage(mode){
+    menu.style.display = "none";
+    stage.style.display = "block";
+    renderMode(mode);
+    requestWakeLock();
+    if (document.documentElement.requestFullscreen){
+      document.documentElement.requestFullscreen().catch(function(){});
+    }
+  }
+
+  function closeStage(){
+    stage.style.display = "none";
+    menu.style.display = "block";
+    clearTimeout(hideTimer);
+    if (document.fullscreenElement && document.exitFullscreen){
+      document.exitFullscreen().catch(function(){});
+    }
+  }
+
+  function showControls(){
+    controls.classList.remove("hidden");
+    modeLabel.classList.remove("hidden");
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function(){
+      controls.classList.add("hidden");
+      modeLabel.classList.add("hidden");
+    }, 3200);
+  }
+
+  async function requestWakeLock(){
+    if (!("wakeLock" in navigator)){
+      wakeStatus.textContent = "Wachhaltesperre nicht verfügbar. Automatische Sperre bitte auf Nie stellen.";
+      return;
+    }
+    try{
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeStatus.textContent = "Bildschirm bleibt während des Versuchs wach.";
+      wakeLock.addEventListener("release", function(){ wakeLock = null; });
+    }catch(error){
+      wakeStatus.textContent = "Wachhaltesperre konnte nicht aktiviert werden. Automatische Sperre bitte auf Nie stellen.";
+    }
+  }
+
+  document.getElementById("openWhite").addEventListener("click", function(){ openStage("white"); });
+  document.getElementById("openRgb").addEventListener("click", function(){ openStage("rgb"); });
+  document.getElementById("back").addEventListener("click", function(event){ event.stopPropagation(); closeStage(); });
+  document.getElementById("white").addEventListener("click", function(event){ event.stopPropagation(); renderMode("white"); });
+  document.getElementById("rgb").addEventListener("click", function(event){ event.stopPropagation(); renderMode("rgb"); });
+  stage.addEventListener("click", function(event){ if (event.target === stage || event.target === field || event.target.classList.contains("band")) showControls(); });
+  document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "visible" && stage.style.display === "block" && !wakeLock) requestWakeLock(); });
+  document.addEventListener("keydown", function(event){
+    if (event.key === "Escape") closeStage();
+    if (event.key.toLowerCase() === "w") renderMode("white");
+    if (event.key.toLowerCase() === "r") renderMode("rgb");
+  });
+  document.addEventListener("gesturestart", function(event){ event.preventDefault(); });
+
+  var api = {
+    colors:{white:"#ffffff",red:"#ff0000",green:"#00ff00",blue:"#0000ff"},
+    open:openStage,
+    close:closeStage,
+    mode:function(){ return currentMode; }
+  };
+  window.__FARBFILTERLABOR__ = api;
+
+  if (new URLSearchParams(window.location.search).get("selftest") === "1"){
+    var box = document.getElementById("selftest");
+    box.className = "show";
+    box.innerHTML = "<strong>Technischer Selbsttest</strong>" +
+      "<code>Weiß: #ffffff</code><code>Rot: #ff0000</code>" +
+      "<code>Grün: #00ff00</code><code>Blau: #0000ff</code>" +
+      "<code>Modi: Weißfeld, RGB-Vergleich</code>";
+  }
+})();
+</script>
+</body>
+</html>

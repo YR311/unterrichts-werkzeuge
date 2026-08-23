@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Licht am Einzelspalt</title>
+<style>
+  :root{
+    --bg:#12141a; --panel:#1c2029; --line:#2e3440; --text:#e8ecf4;
+    --dim:#9aa4b8; --accent:#ffcc55; --a:#59d0ff; --b:#ff8a5c;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text);}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    font-size:17px; line-height:1.35;
+    -webkit-user-select:none; user-select:none;
+    padding:10px 12px 28px; max-width:1100px; margin:0 auto;
+  }
+  h1{font-size:20px; margin:2px 0 2px; font-weight:600;}
+  .sub{color:var(--dim); font-size:14px; margin:0 0 10px;}
+  .tabs{display:flex; gap:6px; margin-bottom:12px;}
+  .tabs button{flex:1; min-width:0;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:12px;
+         padding:10px 12px; margin-bottom:12px;}
+  .panel h2{font-size:13px; margin:0 0 8px; color:var(--dim); font-weight:600;
+            letter-spacing:.04em; text-transform:uppercase;}
+  .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+  .hint{color:var(--dim); font-size:14px; margin-right:2px;}
+  button{
+    font:inherit; font-size:16px; color:var(--text); background:#252b36;
+    border:1px solid var(--line); border-radius:9px; padding:11px 13px;
+    min-width:64px; min-height:46px; cursor:pointer; touch-action:manipulation;
+  }
+  button:active{background:#333b49;}
+  button.on{background:var(--accent); border-color:var(--accent); color:#1a1400; font-weight:600;}
+  button.small{min-width:54px; padding:11px 10px;}
+  .bwert{font-size:26px; font-weight:600; font-variant-numeric:tabular-nums;
+         color:var(--accent); min-width:150px;}
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:44px;
+    background:transparent; margin:0; touch-action:none;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:10px; border-radius:5px; background:#39414f;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:38px; height:38px;
+    border-radius:50%; background:var(--accent); border:2px solid #1a1400; margin-top:-14px;
+  }
+  input[type=range]::-moz-range-track{height:10px; border-radius:5px; background:#39414f;}
+  input[type=range]::-moz-range-thumb{width:34px; height:34px; border:2px solid #1a1400;
+    border-radius:50%; background:var(--accent);}
+  #buehne{width:100%; display:block; border-radius:10px; background:#000;
+          touch-action:none; border:1px solid var(--line);}
+  .mess{display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-top:10px;}
+  .messwert{font-size:19px; font-variant-numeric:tabular-nums;}
+  .messwert .lbl{color:var(--dim); font-size:14px; display:block;}
+  .abstand{font-size:27px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .tagA{color:var(--a);} .tagB{color:var(--b);}
+  table{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:16px;}
+  th,td{text-align:right; padding:6px 8px; border-bottom:1px solid var(--line);}
+  th{color:var(--dim); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;}
+  td:first-child,th:first-child{text-align:left; color:var(--accent);}
+  .leer{color:var(--dim); font-size:15px; padding:6px 2px;}
+  .fuss{color:var(--dim); font-size:13.5px; line-height:1.5;}
+  .fuss b{color:var(--text); font-weight:600;}
+  .trenner{height:1px; background:var(--line); margin:10px 0;}
+  .hilfe li{margin-bottom:9px;}
+  .hilfe{padding-left:22px; margin:0;}
+  @media (max-width:520px){ .bwert{font-size:22px; min-width:120px;} }
+</style>
+</head>
+<body>
+
+<h1>Licht am Einzelspalt</h1>
+<p class="sub">Rotes Licht f&auml;llt auf einen schmalen Spalt. Was auf dem Schirm ankommt,
+siehst du im Reiter <b>Versuch</b>.</p>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="panel" id="panelSpalt">
+  <h2>Spaltbreite einstellen</h2>
+  <div class="row" style="margin-bottom:8px;">
+    <div class="bwert" id="bwert">0,100 mm</div>
+    <button class="small" id="bminus">&#9664;</button>
+    <button class="small" id="bplus">&#9654;</button>
+  </div>
+  <input type="range" id="bslider" min="0" max="1000" value="0" step="1" aria-label="Spaltbreite">
+  <div class="trenner"></div>
+  <div class="row" id="presets1"></div>
+  <div class="row" id="presets2" style="margin-top:8px;"></div>
+</div>
+
+<canvas id="buehne"></canvas>
+
+<div class="mess" id="messzeile">
+  <div class="messwert"><span class="lbl tagA">Marke A</span><span id="posA">&minus;13,0 mm</span></div>
+  <button class="small" data-nudge="A-">A &#9664;</button>
+  <button class="small" data-nudge="A+">A &#9654;</button>
+  <div class="messwert"><span class="lbl tagB">Marke B</span><span id="posB">+13,0 mm</span></div>
+  <button class="small" data-nudge="B-">B &#9664;</button>
+  <button class="small" data-nudge="B+">B &#9654;</button>
+  <div class="messwert"><span class="lbl">Abstand A&ndash;B</span><span class="abstand" id="abstand">26,0 mm</span></div>
+</div>
+
+<div class="panel" id="panelAnzeige" style="margin-top:12px;">
+  <h2>Schirmausschnitt</h2>
+  <div class="row" id="zoom"></div>
+  <div class="trenner"></div>
+  <h2>Anzeige</h2>
+  <div class="row">
+    <button id="kurve">Helligkeitskurve</button>
+    <button id="merken">Streifen merken</button>
+    <button id="reset">Marken zur&uuml;cksetzen</button>
+  </div>
+  <div class="trenner"></div>
+  <h2>Zusatz: Lichtfarbe</h2>
+  <div class="row" id="farben"></div>
+</div>
+
+<div class="panel" id="panelTabelle">
+  <h2>Eigene Messwerte</h2>
+  <div class="row" style="margin-bottom:10px;">
+    <button id="uebernehmen">Wert &uuml;bernehmen</button>
+    <button class="small" id="letzteWeg">Letzte l&ouml;schen</button>
+    <button class="small" id="alleWeg">Alle l&ouml;schen</button>
+  </div>
+  <div id="tabelleBox"></div>
+  <p class="hint" style="margin:8px 0 0;">
+    Diese Liste ist nur eine Ged&auml;chtnisst&uuml;tze. &Uuml;bertrage deine Werte auf den Messstreifen.
+  </p>
+</div>
+
+<div class="panel" id="panelAufbau">
+  <h2>Was du hier siehst</h2>
+  <p style="margin:0 0 10px; font-size:15.5px;">
+    Der Spalt ist ein <b>senkrechter</b> Schlitz. Deshalb f&auml;chert das Licht
+    <b>waagerecht</b> auf, und genau in dieser Richtung misst du auf dem Schirm.
+    Oben blickst du von oben auf den Aufbau: Was in der Zeichnung nach oben und unten
+    geht, ist in Wirklichkeit links und rechts.
+  </p>
+  <div class="row"><button id="lichtweg">Lichtweg zeigen</button></div>
+  <p class="hint" style="margin:8px 0 0;">
+    Schalte den Lichtweg erst ein, wenn du im Reiter Versuch nachgemessen hast.
+  </p>
+</div>
+
+<div class="panel" id="panelHilfe">
+  <h2>Kurzanleitung</h2>
+  <ul class="hilfe">
+    <li>Die Marken <b class="tagA">A</b> und <b class="tagB">B</b> ziehst du mit dem Finger.
+        Mit den Pfeiltasten darunter stellst du sie fein ein.</li>
+    <li>Miss <b>von dunkel bis dunkel</b>: Setze A und B auf die beiden dunklen Stellen
+        links und rechts des hellen Mittelstreifens.</li>
+    <li><b>Schirmausschnitt</b> vergr&ouml;&szlig;ert den Schirm, wenn das Muster sehr klein ist.
+        Die Skala bleibt dabei immer in Millimetern. Deine Marken bleiben erhalten.</li>
+    <li><b>Streifen merken</b> legt das aktuelle Muster als Vergleichsstreifen darunter.
+        So siehst du direkt, was sich &auml;ndert.</li>
+    <li>Die <b>Helligkeit</b> wird f&uuml;r jede Spaltbreite neu angepasst, wie bei einer Kamera.
+        Vergleichbar sind die Breiten, nicht die Helligkeiten.</li>
+    <li>Fest eingestellt und nicht ver&auml;nderbar: Schirmabstand <b>L = 2,00 m</b>,
+        Wellenl&auml;nge <b>650 nm</b>.</li>
+    <li>Dies ist ein <b>berechnetes Modell</b>, kein Foto.</li>
+  </ul>
+</div>
+
+<p class="fuss">
+  <b>Feste Gr&ouml;&szlig;en:</b> Schirmabstand <b>L&nbsp;=&nbsp;2,00&nbsp;m</b>,
+  Wellenl&auml;nge <span id="lamText">650&nbsp;nm (rot)</span>.
+  Die Anzeige ist berechnet, nicht fotografiert.
+</p>
+
+<script>
+(function(){
+"use strict";
+
+/* =================================================================
+   Fresnelsche Integrale C(u), S(u)
+   Reihenentwicklung fuer |u| < 4, asymptotische Entwicklung darueber
+   (Glieder bis O(u^-5)). Damit sind der strahlenoptische Bereich
+   (breiter Spalt) und der Beugungsbereich (schmaler Spalt) korrekt
+   erfasst; geprueft gegen Tabellenwerte.
+   ================================================================= */
+var PI = Math.PI;
+
+function fresnel(u, out){
+  var au = Math.abs(u), C, S, n, r;
+  if (au === 0){ out[0] = 0; out[1] = 0; return; }
+  if (au < 4){
+    var A = (PI*PI/4) * au*au*au*au;      /* (pi/2)^2 * u^4 */
+    var t = au, sumC = au;                /* n = 0 */
+    for (n = 1; n < 60; n++){
+      r = -A * (4*n-3) / ((2*n)*(2*n-1)*(4*n+1));
+      t *= r; sumC += t;
+      if (Math.abs(t) < 1e-16*Math.abs(sumC)) break;
+    }
+    var s = (PI/6) * au*au*au, sumS = s;  /* n = 0 */
+    for (n = 1; n < 60; n++){
+      r = -A * (4*n-1) / ((2*n+1)*(2*n)*(4*n+3));
+      s *= r; sumS += s;
+      if (Math.abs(s) < 1e-16*Math.abs(sumS)) break;
+    }
+    C = sumC; S = sumS;
+  } else {
+    var p  = PI*au*au/2;
+    var sp = Math.sin(p), cp = Math.cos(p);
+    var u3 = au*au*au, u5 = u3*au*au;
+    var f1 = 1/(PI*au), f3 = 1/(PI*PI*u3), f5 = 3/(PI*PI*PI*u5);
+    C = 0.5 + f1*sp - f3*cp - f5*sp;
+    S = 0.5 - f1*cp - f3*sp + f5*cp;
+  }
+  if (u < 0){ C = -C; S = -S; }
+  out[0] = C; out[1] = S;
+}
+
+var _c1 = [0,0], _c2 = [0,0];
+
+/* Intensitaet am Schirmort x (m) bei Spaltbreite b (m) */
+function intensitaet(x, b, lam, L){
+  var sc = Math.sqrt(2/(lam*L));
+  fresnel((-0.5*b - x)*sc, _c1);
+  fresnel(( 0.5*b - x)*sc, _c2);
+  var dC = _c2[0]-_c1[0], dS = _c2[1]-_c1[1];
+  return 0.5*(dC*dC + dS*dS);
+}
+
+/* =================================================================
+   Zustand
+   ================================================================= */
+var LAM = {rot:650e-9, gruen:532e-9, blau:450e-9};
+var RGB = {rot:[255,48,36], gruen:[70,255,105], blau:[95,130,255]};
+var NAM = {rot:"650&nbsp;nm (rot)", gruen:"532&nbsp;nm (gr&uuml;n)", blau:"450&nbsp;nm (blau)"};
+
+var L    = 2.0;                 /* Schirmabstand in m */
+var VOLL = 45;                  /* halbe Gesamtbreite des Schirms in mm */
+var BMIN = 0.03e-3, BMAX = 4.0e-3;
+
+/* Ausschnitte: halbe Breite in mm, Feinschritt, Nachkommastellen, Teilung */
+var VIEWS = [
+  {hw:45, step:0.2,  dez:1, klein:1,   gross:10},
+  {hw:15, step:0.05, dez:2, klein:0.5, gross:5},
+  {hw:5,  step:0.02, dez:2, klein:0.2, gross:1}
+];
+
+var st = { b:0.10e-3, farbe:"rot", kurve:false, view:0,
+           mA:-13, mB:13, refB:null, tab:"versuch", lichtweg:false, tabelle:[] };
+
+function V(){ return VIEWS[st.view]; }
+function fmt(x,n){ return x.toFixed(n).replace(".", ","); }
+function klemme(v){ return Math.max(-VOLL, Math.min(VOLL, v)); }
+function runde(v){ var s = V().step; return Math.round(v/s)*s; }
+
+/* =================================================================
+   Neuzeichnen nur einmal je Bildschirmaktualisierung
+   ================================================================= */
+var wartet = false;
+function anfordern(){
+  if (wartet) return;
+  wartet = true;
+  window.requestAnimationFrame(function(){ wartet = false; zeichne(); });
+}
+
+/* =================================================================
+   Reiter
+   ================================================================= */
+var TABS = [["versuch","Versuch"],["aufbau","Aufbau"],["hilfe","Hilfe"]];
+var tabBox = document.getElementById("tabs");
+TABS.forEach(function(t){
+  var el = document.createElement("button");
+  el.textContent = t[1];
+  el.setAttribute("data-tab", t[0]);
+  el.addEventListener("click", function(){ st.tab = t[0]; zeigeTab(); });
+  tabBox.appendChild(el);
+});
+
+function sicht(id, an){ document.getElementById(id).style.display = an ? "" : "none"; }
+
+function zeigeTab(){
+  var bs = tabBox.querySelectorAll("button"), i;
+  for (i=0;i<bs.length;i++)
+    bs[i].className = (bs[i].getAttribute("data-tab")===st.tab) ? "on" : "";
+  var v = (st.tab==="versuch"), a = (st.tab==="aufbau"), h = (st.tab==="hilfe");
+  sicht("panelSpalt", v || a);
+  document.getElementById("buehne").style.display = (v || a) ? "block" : "none";
+  sicht("messzeile", v);
+  sicht("panelAnzeige", v);
+  sicht("panelTabelle", v);
+  sicht("panelAufbau", a);
+  sicht("panelHilfe", h);
+  if (v || a){ passeGroesseAn(); zeichne(); }
+}
+
+/* =================================================================
+   Bedienelemente
+   ================================================================= */
+var slider  = document.getElementById("bslider");
+var bwert   = document.getElementById("bwert");
+var lamText = document.getElementById("lamText");
+
+function bToSlider(b){ return Math.round(Math.log(b/BMIN)/Math.log(BMAX/BMIN)*1000); }
+function sliderToB(v){ return BMIN*Math.exp((v/1000)*Math.log(BMAX/BMIN)); }
+
+function setB(b){
+  st.b = Math.min(BMAX, Math.max(BMIN, b));
+  slider.value = bToSlider(st.b);
+  bwert.innerHTML = fmt(st.b*1000, 3) + " mm";
+  anfordern();
+}
+slider.addEventListener("input", function(){ setB(sliderToB(+slider.value)); });
+document.getElementById("bminus").addEventListener("click", function(){ setB(st.b/1.06); });
+document.getElementById("bplus").addEventListener("click",  function(){ setB(st.b*1.06); });
+
+function baueKnoepfe(id, werte, label){
+  var box = document.getElementById(id);
+  if (label){
+    var t = document.createElement("span");
+    t.className = "hint"; t.textContent = label; box.appendChild(t);
+  }
+  werte.forEach(function(w){
+    var el = document.createElement("button");
+    el.className = "small";
+    el.textContent = fmt(w, w < 1 ? 2 : 1);
+    el.addEventListener("click", function(){ setB(w*1e-3); });
+    box.appendChild(el);
+  });
+}
+baueKnoepfe("presets1", [0.05,0.08,0.10,0.13,0.20,0.26,0.40], "schmal (mm):");
+baueKnoepfe("presets2", [1.0,1.6,2.0,3.0,4.0], "breit (mm):");
+
+var zoomBox = document.getElementById("zoom");
+["90 mm","30 mm","10 mm"].forEach(function(txt, idx){
+  var el = document.createElement("button");
+  el.textContent = txt;
+  /* Marken bleiben unveraendert erhalten; nur die Sicht aendert sich. */
+  el.addEventListener("click", function(){ st.view = idx; markiereZoom(); anfordern(); });
+  zoomBox.appendChild(el);
+});
+function markiereZoom(){
+  var bs = zoomBox.querySelectorAll("button");
+  for (var i=0;i<bs.length;i++) bs[i].className = (i===st.view) ? "on" : "";
+}
+markiereZoom();
+
+var farbBox = document.getElementById("farben");
+["rot","gruen","blau"].forEach(function(f){
+  var el = document.createElement("button");
+  el.textContent = (f==="rot") ? "rot" : (f==="gruen" ? "grün" : "blau");
+  el.setAttribute("data-farbe", f);
+  el.addEventListener("click", function(){
+    st.farbe = f; lamText.innerHTML = NAM[f]; markiereFarbe(); anfordern();
+  });
+  farbBox.appendChild(el);
+});
+function markiereFarbe(){
+  var bs = farbBox.querySelectorAll("button");
+  for (var i=0;i<bs.length;i++)
+    bs[i].className = (bs[i].getAttribute("data-farbe")===st.farbe) ? "on" : "";
+}
+markiereFarbe();
+
+var kurveBtn = document.getElementById("kurve");
+kurveBtn.addEventListener("click", function(){
+  st.kurve = !st.kurve;
+  kurveBtn.className = st.kurve ? "on" : "";
+  passeGroesseAn(); anfordern();
+});
+
+var merkenBtn = document.getElementById("merken");
+merkenBtn.addEventListener("click", function(){
+  st.refB = (st.refB === null) ? st.b : null;
+  merkenBtn.className = (st.refB !== null) ? "on" : "";
+  merkenBtn.textContent = (st.refB !== null) ? "Vergleich löschen" : "Streifen merken";
+  passeGroesseAn(); anfordern();
+});
+
+document.getElementById("reset").addEventListener("click", function(){
+  var h = V().hw; st.mA = -h*0.3; st.mB = h*0.3; anfordern();
+});
+
+var lichtwegBtn = document.getElementById("lichtweg");
+lichtwegBtn.addEventListener("click", function(){
+  st.lichtweg = !st.lichtweg;
+  lichtwegBtn.className = st.lichtweg ? "on" : "";
+  anfordern();
+});
+
+var nudger = document.querySelectorAll("[data-nudge]");
+for (var i=0;i<nudger.length;i++){
+  (function(el){
+    el.addEventListener("click", function(){
+      var k = el.getAttribute("data-nudge");
+      var d = (k.charAt(1)==="+") ? V().step : -V().step;
+      if (k.charAt(0)==="A") st.mA = klemme(st.mA+d); else st.mB = klemme(st.mB+d);
+      anfordern();
+    });
+  })(nudger[i]);
+}
+
+/* Messwerttabelle */
+var tabelleBox = document.getElementById("tabelleBox");
+document.getElementById("uebernehmen").addEventListener("click", function(){
+  st.tabelle.push({ b: st.b*1000, a: st.mA, c: st.mB, d: Math.abs(st.mB-st.mA), dez: V().dez });
+  if (st.tabelle.length > 14) st.tabelle.shift();
+  zeichneTabelle();
+});
+document.getElementById("letzteWeg").addEventListener("click", function(){
+  st.tabelle.pop(); zeichneTabelle();
+});
+document.getElementById("alleWeg").addEventListener("click", function(){
+  st.tabelle.length = 0; zeichneTabelle();
+});
+function zeichneTabelle(){
+  if (!st.tabelle.length){
+    tabelleBox.innerHTML = '<p class="leer">Noch keine Werte &uuml;bernommen.</p>';
+    return;
+  }
+  var h = '<table><tr><th>Spaltbreite</th><th>Marke A</th><th>Marke B</th><th>Abstand A&ndash;B</th></tr>';
+  st.tabelle.forEach(function(z){
+    h += '<tr><td>' + fmt(z.b,3) + ' mm</td><td>' + fmt(z.a,z.dez) + '</td><td>' +
+         fmt(z.c,z.dez) + '</td><td><b>' + fmt(z.d,z.dez) + ' mm</b></td></tr>';
+  });
+  tabelleBox.innerHTML = h + '</table>';
+}
+zeichneTabelle();
+
+/* =================================================================
+   Zeichenflaeche
+   ================================================================= */
+var cv   = document.getElementById("buehne");
+var ctx  = cv.getContext("2d");
+var off  = document.createElement("canvas");
+var octx = off.getContext("2d");
+
+var H_STRIP = 140, H_REF = 46, H_KURVE = 130, H_LINEAL = 54, H_AUFBAU = 430;
+var Wcss = 0, Hcss = 0, dpr = 1;
+
+function hoehe(){
+  if (st.tab === "aufbau") return H_AUFBAU;
+  return H_STRIP + (st.refB !== null ? H_REF : 0) + (st.kurve ? H_KURVE : 0) + H_LINEAL;
+}
+function passeGroesseAn(){
+  dpr  = Math.min(2, window.devicePixelRatio || 1);
+  Wcss = cv.clientWidth || 800;
+  Hcss = hoehe();
+  cv.style.height = Hcss + "px";
+  cv.width  = Math.round(Wcss*dpr);
+  cv.height = Math.round(Hcss*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function xToPx(xmm){ var h = V().hw; return (xmm + h)/(2*h) * Wcss; }
+function pxToX(px){  var h = V().hw; return (px/Wcss)*(2*h) - h; }
+
+/* Bezugshelligkeit aus dem gesamten Schirm, damit der Ausschnitt
+   die Helligkeit nicht veraendert. 2401 Punkte: bei b = 4 mm lag die
+   Unterschaetzung mit 801 Punkten noch bei 1,8 Prozent. */
+function bezugshelligkeit(b, lam){
+  var peak = 0, N = 2400;
+  for (var i=0;i<=N;i++){
+    var I = intensitaet((-VOLL + 2*VOLL*i/N)/1000, b, lam, L);
+    if (I > peak) peak = I;
+  }
+  return peak > 0 ? peak : 1;
+}
+
+/* Halbe Breite des beleuchteten Bereichs in mm (5-Prozent-Schwelle) */
+function musterHalbbreite(b, lam){
+  var N = 900, peak = 0, I = new Float64Array(N+1), i;
+  for (i=0;i<=N;i++){
+    I[i] = intensitaet((-VOLL + 2*VOLL*i/N)/1000, b, lam, L);
+    if (I[i] > peak) peak = I[i];
+  }
+  var lo = 0, hi = N;
+  for (i=0;i<=N;i++){ if (I[i] > 0.05*peak){ lo = i; break; } }
+  for (i=N;i>=0;i--){ if (I[i] > 0.05*peak){ hi = i; break; } }
+  return Math.max(0.4, (hi-lo)/N * VOLL);
+}
+
+/* Intensitaetszeile fuer einen Streifen berechnen */
+function zeile(Wd, hwmm, b, lam){
+  var I = new Float64Array(Wd), SUB = 5, hw = hwmm/1000, dx = (2*hw)/Wd, i, j;
+  for (i=0;i<Wd;i++){
+    var x0 = -hw + (i+0.5)*dx, sum = 0;
+    for (j=0;j<SUB;j++) sum += intensitaet(x0 + (j/SUB - 0.5 + 0.5/SUB)*dx, b, lam, L);
+    I[i] = sum/SUB;
+  }
+  return I;
+}
+function malStreifen(I, peak, col, y, h){
+  var Wd = I.length;
+  off.width = Wd; off.height = 1;
+  var img = octx.createImageData(Wd,1), d = img.data;
+  for (var i=0;i<Wd;i++){
+    var hell = Math.pow(Math.min(1, I[i]/peak), 0.45);
+    d[4*i]   = Math.round(col[0]*hell);
+    d[4*i+1] = Math.round(col[1]*hell);
+    d[4*i+2] = Math.round(col[2]*hell);
+    d[4*i+3] = 255;
+  }
+  octx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(off, 0,0,Wd,1, 0,y,Wcss,h);
+  ctx.imageSmoothingEnabled = true;
+}
+
+function zeichne(){
+  if (!Wcss) passeGroesseAn();
+  if (st.tab === "aufbau") zeichneAufbau(); else zeichneVersuch();
+}
+
+/* -----------------------------------------------------------------
+   Reiter Versuch
+   ----------------------------------------------------------------- */
+function zeichneVersuch(){
+  var lam = LAM[st.farbe], col = RGB[st.farbe], Wd = cv.width, i;
+  var peak = bezugshelligkeit(st.b, lam);
+  var I = zeile(Wd, V().hw, st.b, lam);
+
+  ctx.clearRect(0,0,Wcss,Hcss);
+  ctx.fillStyle = "#000"; ctx.fillRect(0,0,Wcss,Hcss);
+
+  malStreifen(I, peak, col, 0, H_STRIP);
+  var yOff = H_STRIP;
+
+  /* Vergleichsstreifen, mit der aktuellen Sicht neu berechnet */
+  if (st.refB !== null){
+    var Ir = zeile(Wd, V().hw, st.refB, lam);
+    var pr = bezugshelligkeit(st.refB, lam);
+    ctx.fillStyle = "#0b0d12"; ctx.fillRect(0,yOff,Wcss,H_REF);
+    malStreifen(Ir, pr, col, yOff+16, H_REF-16);
+    ctx.fillStyle = "#9aa4b8"; ctx.font = "12px -apple-system,Arial,sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("Vergleich: b = " + fmt(st.refB*1000,3) + " mm", 8, yOff+12);
+    yOff += H_REF;
+  }
+
+  /* Helligkeitskurve */
+  if (st.kurve){
+    ctx.fillStyle = "#0b0d12"; ctx.fillRect(0,yOff,Wcss,H_KURVE);
+    ctx.strokeStyle = "#2e3440"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,yOff+H_KURVE-1); ctx.lineTo(Wcss,yOff+H_KURVE-1); ctx.stroke();
+    ctx.strokeStyle = "rgb("+col[0]+","+col[1]+","+col[2]+")";
+    ctx.lineWidth = 2; ctx.beginPath();
+    for (i=0;i<Wd;i++){
+      var px = (i/Wd)*Wcss;
+      var py = yOff + H_KURVE - 6 - Math.min(1,I[i]/peak)*(H_KURVE-14);
+      if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    ctx.fillStyle = "#9aa4b8"; ctx.font = "13px -apple-system,Arial,sans-serif";
+    ctx.textAlign = "left"; ctx.fillText("Helligkeit", 8, yOff+18);
+    yOff += H_KURVE;
+  }
+
+  malLineal(yOff);
+  malMarke(st.mA, "#59d0ff", "A");
+  malMarke(st.mB, "#ff8a5c", "B");
+
+  /* Modellhinweis */
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.font = "11px -apple-system,Arial,sans-serif"; ctx.textAlign = "right";
+  ctx.fillText("berechnetes Modell", Wcss-8, 14);
+
+  var dez = V().dez;
+  document.getElementById("posA").textContent = vz(st.mA) + fmt(Math.abs(st.mA),dez) + " mm";
+  document.getElementById("posB").textContent = vz(st.mB) + fmt(Math.abs(st.mB),dez) + " mm";
+  document.getElementById("abstand").textContent = fmt(Math.abs(st.mB-st.mA),dez) + " mm";
+}
+function vz(v){ return v < 0 ? "−" : "+"; }
+
+function malLineal(yOff){
+  var v = V();
+  ctx.fillStyle = "#161a22"; ctx.fillRect(0,yOff,Wcss,H_LINEAL);
+  ctx.font = "13px -apple-system,Arial,sans-serif"; ctx.textAlign = "center";
+  var nk = Math.round(v.hw/v.klein);
+  for (var k=-nk;k<=nk;k++){
+    var mm = k*v.klein, px = xToPx(mm);
+    var gross = (Math.abs(mm/v.gross - Math.round(mm/v.gross)) < 1e-9);
+    ctx.beginPath(); ctx.moveTo(px,yOff+1); ctx.lineTo(px,yOff+1+(gross?17:7));
+    ctx.strokeStyle = gross ? "#95a1b5" : "#5c6778"; ctx.lineWidth = 1; ctx.stroke();
+    if (gross){
+      ctx.fillStyle = "#95a1b5";
+      ctx.fillText((mm>0?"+":"") + fmt(mm,0), px, yOff+33);
+    }
+  }
+  ctx.fillStyle = "#5c6778";
+  ctx.fillText("Schirm, Angaben in mm", Wcss/2, yOff+49);
+}
+
+function malMarke(mm, farbe, name){
+  var h = V().hw;
+  if (mm < -h || mm > h){
+    /* Marke liegt ausserhalb des Ausschnitts: Hinweispfeil am Rand */
+    var links = (mm < -h), px0 = links ? 13 : Wcss-13;
+    ctx.fillStyle = farbe; ctx.globalAlpha = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(links ? px0-11 : px0+11, 24);
+    ctx.lineTo(px0, 10); ctx.lineTo(px0, 38); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#101319"; ctx.font = "bold 12px -apple-system,Arial,sans-serif";
+    ctx.textAlign = "center"; ctx.fillText(name, px0 + (links?4:-4), 28);
+    return;
+  }
+  var px = xToPx(mm);
+  ctx.strokeStyle = farbe; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,Hcss); ctx.stroke();
+  ctx.fillStyle = farbe;
+  ctx.beginPath(); ctx.moveTo(px-11,0); ctx.lineTo(px+11,0); ctx.lineTo(px,17);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#101319"; ctx.font = "bold 12px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "center"; ctx.fillText(name, px, 12);
+}
+
+/* -----------------------------------------------------------------
+   Reiter Aufbau
+   ----------------------------------------------------------------- */
+function zeichneAufbau(){
+  var lam = LAM[st.farbe], col = RGB[st.farbe];
+  var W = Wcss;
+  ctx.clearRect(0,0,W,Hcss);
+  ctx.fillStyle = "#0b0d12"; ctx.fillRect(0,0,W,Hcss);
+
+  /* ---- oben: Blick von oben auf den Aufbau ---- */
+  var yM = 128;                    /* optische Achse */
+  var xQ = 54, xM = Math.round(W*0.40), xS = W-46;
+  var halbSchirm = 96;             /* halbe Schirmhoehe in px  = 45 mm */
+  /* Die gezeichnete Spaltoeffnung waechst logarithmisch mit b. Linear waere
+     der Unterrichtsbereich 0,05 bis 0,40 mm optisch nicht unterscheidbar. */
+  var anteil  = Math.log(st.b/BMIN)/Math.log(BMAX/BMIN);
+  var spaltPx = 5 + 17*anteil;     /* Spaltoeffnung, stark vergroessert */
+
+  ctx.font = "13px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "left"; ctx.fillStyle = "#9aa4b8";
+  ctx.fillText("Blick von oben auf den Aufbau", 10, 18);
+
+  /* Lichtquelle */
+  ctx.fillStyle = "#2b3240"; ctx.strokeStyle = "#5c6778"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.rect(xQ-30, yM-26, 30, 52); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "rgb("+col[0]+","+col[1]+","+col[2]+")";
+  ctx.fillRect(xQ-2, yM-14, 4, 28);
+  ctx.fillStyle = "#9aa4b8"; ctx.textAlign = "center";
+  ctx.fillText("Lichtquelle", xQ-15, yM+46);
+  ctx.fillText("rotes Licht", xQ-15, yM+62);
+
+  /* paralleles Buendel bis zum Spalt */
+  ctx.strokeStyle = "rgba("+col[0]+","+col[1]+","+col[2]+",0.55)";
+  ctx.lineWidth = 2;
+  for (var q=-1;q<=1;q++){
+    var yy = yM + q*11;
+    ctx.beginPath(); ctx.moveTo(xQ+4, yy); ctx.lineTo(xM-6, yy); ctx.stroke();
+  }
+
+  /* Maske mit Spalt */
+  ctx.fillStyle = "#454e5e";
+  ctx.fillRect(xM-5, yM-halbSchirm+4, 10, halbSchirm-spaltPx/2+4);
+  ctx.fillRect(xM-5, yM+spaltPx/2, 10, halbSchirm-spaltPx/2+4);
+  ctx.fillStyle = "#e8ecf4"; ctx.font = "13px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Spalt", xM, yM-halbSchirm-8);
+  /* Bemassung der Spaltbreite */
+  ctx.strokeStyle = "#ffcc55"; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(xM+22, yM-spaltPx/2); ctx.lineTo(xM+22, yM+spaltPx/2);
+  ctx.moveTo(xM+17, yM-spaltPx/2); ctx.lineTo(xM+27, yM-spaltPx/2);
+  ctx.moveTo(xM+17, yM+spaltPx/2); ctx.lineTo(xM+27, yM+spaltPx/2);
+  ctx.stroke();
+  ctx.fillStyle = "#ffcc55"; ctx.textAlign = "left";
+  ctx.fillText("b = " + fmt(st.b*1000,3) + " mm", xM+32, yM+5);
+  ctx.fillStyle = "#5c6778"; ctx.font = "11px -apple-system,Arial,sans-serif";
+  ctx.fillText("stark vergrößert gezeichnet", xM+32, yM+21);
+
+  /* Schirm */
+  ctx.fillStyle = "#d8dee9";
+  ctx.fillRect(xS-4, yM-halbSchirm, 8, 2*halbSchirm);
+  ctx.fillStyle = "#9aa4b8"; ctx.font = "13px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Schirm", xS-6, yM-halbSchirm-8);
+
+  /* Bereich zwischen Spalt und Schirm */
+  if (st.lichtweg){
+    var hb = musterHalbbreite(st.b, lam);
+    var dy = Math.max(4, hb/VOLL*halbSchirm);
+    var g = ctx.createLinearGradient(xM, 0, xS, 0);
+    g.addColorStop(0, "rgba("+col[0]+","+col[1]+","+col[2]+",0.55)");
+    g.addColorStop(1, "rgba("+col[0]+","+col[1]+","+col[2]+",0.16)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(xM+5, yM-spaltPx/2); ctx.lineTo(xS-4, yM-dy);
+    ctx.lineTo(xS-4, yM+dy);        ctx.lineTo(xM+5, yM+spaltPx/2);
+    ctx.closePath(); ctx.fill();
+    /* Bemassung am Schirm: bei breiten Spalten ist der Kegel nur wenige
+       Pixel breit, die Zahl bleibt aber ablesbar. */
+    ctx.strokeStyle = "#ffcc55"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(xS-20, yM-dy); ctx.lineTo(xS-20, yM+dy);
+    ctx.moveTo(xS-26, yM-dy); ctx.lineTo(xS-14, yM-dy);
+    ctx.moveTo(xS-26, yM+dy); ctx.lineTo(xS-14, yM+dy);
+    ctx.stroke();
+    ctx.fillStyle = "#ffcc55"; ctx.textAlign = "right";
+    ctx.font = "13px -apple-system,Arial,sans-serif";
+    ctx.fillText(fmt(2*hb,1) + " mm", xS-30, yM - dy - 8);
+  } else {
+    ctx.strokeStyle = "#3c4658"; ctx.lineWidth = 1.5;
+    ctx.setLineDash([6,6]);
+    ctx.beginPath();
+    ctx.moveTo(xM+5, yM-spaltPx/2); ctx.lineTo(xS-4, yM-52);
+    ctx.moveTo(xM+5, yM+spaltPx/2); ctx.lineTo(xS-4, yM+52);
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#6d7a90"; ctx.font = "bold 44px -apple-system,Arial,sans-serif";
+    ctx.textAlign = "center"; ctx.fillText("?", (xM+xS)/2, yM+16);
+    ctx.font = "12px -apple-system,Arial,sans-serif";
+    ctx.fillText("Was hier geschieht,", (xM+xS)/2, yM+42);
+    ctx.fillText("misst du im Reiter Versuch.", (xM+xS)/2, yM+58);
+  }
+
+  /* Bemassung L */
+  var yL = yM + halbSchirm + 26;
+  ctx.strokeStyle = "#95a1b5"; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(xM, yL); ctx.lineTo(xS, yL);
+  ctx.moveTo(xM, yL-6); ctx.lineTo(xM, yL+6);
+  ctx.moveTo(xS, yL-6); ctx.lineTo(xS, yL+6);
+  ctx.stroke();
+  ctx.fillStyle = "#e8ecf4"; ctx.font = "13px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "center"; ctx.fillText("L = 2,00 m", (xM+xS)/2, yL-10);
+
+  /* ---- unten: zwei Ansichten ---- */
+  var yU = 268, hU = Hcss - yU - 12, xTeil = Math.round(W*0.46);
+
+  ctx.fillStyle = "#9aa4b8"; ctx.font = "13px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Blick auf den Spalt", 10, yU+2);
+  ctx.fillText("Blick auf den Schirm", xTeil+20, yU+2);
+
+  /* Blick auf den Spalt: senkrechter Schlitz */
+  var sx = 10, sw = xTeil-30, sy = yU+12, sh = hU-30;
+  ctx.fillStyle = "#454e5e"; ctx.fillRect(sx, sy, sw, sh);
+  var schlitz = 6 + 20*anteil;   /* gleiche logarithmische Darstellung wie oben */
+  ctx.fillStyle = "rgb("+col[0]+","+col[1]+","+col[2]+")";
+  ctx.fillRect(sx+sw/2-schlitz/2, sy, schlitz, sh);
+  ctx.strokeStyle = "#ffcc55"; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(sx+sw/2-schlitz/2, sy+sh+8); ctx.lineTo(sx+sw/2+schlitz/2, sy+sh+8);
+  ctx.moveTo(sx+sw/2-schlitz/2, sy+sh+4); ctx.lineTo(sx+sw/2-schlitz/2, sy+sh+12);
+  ctx.moveTo(sx+sw/2+schlitz/2, sy+sh+4); ctx.lineTo(sx+sw/2+schlitz/2, sy+sh+12);
+  ctx.stroke();
+  ctx.fillStyle = "#ffcc55"; ctx.textAlign = "center"; ctx.font = "12px -apple-system,Arial,sans-serif";
+  ctx.fillText("b", sx+sw/2, sy+sh+26);
+
+  /* Blick auf den Schirm: das Muster ueber die volle Schirmbreite */
+  var px0 = xTeil+20, pw = W-px0-10, py = yU+12, ph = sh;
+  var Wd2 = Math.max(64, Math.round(pw*dpr));
+  var Ivoll = zeile(Wd2, VOLL, st.b, lam);
+  var pk = bezugshelligkeit(st.b, lam);
+  off.width = Wd2; off.height = 1;
+  var img2 = octx.createImageData(Wd2,1), d2 = img2.data;
+  for (var i2=0;i2<Wd2;i2++){
+    var hell2 = Math.pow(Math.min(1, Ivoll[i2]/pk), 0.45);
+    d2[4*i2] = Math.round(col[0]*hell2); d2[4*i2+1] = Math.round(col[1]*hell2);
+    d2[4*i2+2] = Math.round(col[2]*hell2); d2[4*i2+3] = 255;
+  }
+  octx.putImageData(img2,0,0);
+  ctx.fillStyle = "#000"; ctx.fillRect(px0, py, pw, ph);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(off, 0,0,Wd2,1, px0, py, pw, ph);
+  ctx.imageSmoothingEnabled = true;
+  ctx.strokeStyle = "#3c4658"; ctx.lineWidth = 1; ctx.strokeRect(px0, py, pw, ph);
+  ctx.fillStyle = "#5c6778"; ctx.font = "11px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("ganze Schirmbreite, 90 mm", px0+pw/2, py+ph+18);
+  ctx.textAlign = "left";  ctx.fillText("−45 mm", px0, py+ph+18);
+  ctx.textAlign = "right"; ctx.fillText("+45 mm", px0+pw, py+ph+18);
+}
+
+/* =================================================================
+   Marken ziehen: Zeiger, Touch und Maus
+   ================================================================= */
+var zieht = null;
+function lokalX(clientX){ return clientX - cv.getBoundingClientRect().left; }
+function greife(clientX){
+  if (st.tab !== "versuch") return;
+  var x = lokalX(clientX);
+  zieht = (Math.abs(xToPx(st.mA)-x) <= Math.abs(xToPx(st.mB)-x)) ? "A" : "B";
+  bewege(clientX);
+}
+function bewege(clientX){
+  if (!zieht) return;
+  var mm = klemme(runde(pxToX(lokalX(clientX))));
+  if (zieht === "A") st.mA = mm; else st.mB = mm;
+  anfordern();
+}
+function loslassen(){ zieht = null; }
+
+if (window.PointerEvent){
+  cv.addEventListener("pointerdown", function(e){
+    if (st.tab !== "versuch") return;
+    if (cv.setPointerCapture){ try{ cv.setPointerCapture(e.pointerId); }catch(err){} }
+    greife(e.clientX); e.preventDefault();
+  });
+  cv.addEventListener("pointermove", function(e){ if (zieht){ bewege(e.clientX); e.preventDefault(); } });
+  cv.addEventListener("pointerup", loslassen);
+  cv.addEventListener("pointercancel", loslassen);
+} else {
+  cv.addEventListener("touchstart", function(e){ greife(e.touches[0].clientX); e.preventDefault(); }, false);
+  cv.addEventListener("touchmove",  function(e){ bewege(e.touches[0].clientX); e.preventDefault(); }, false);
+  cv.addEventListener("touchend", loslassen, false);
+  cv.addEventListener("mousedown", function(e){ greife(e.clientX); e.preventDefault(); });
+  window.addEventListener("mousemove", function(e){ if (zieht) bewege(e.clientX); });
+  window.addEventListener("mouseup", loslassen);
+}
+
+/* =================================================================
+   Start
+   ================================================================= */
+window.addEventListener("resize", function(){ passeGroesseAn(); anfordern(); });
+window.addEventListener("orientationchange", function(){
+  setTimeout(function(){ passeGroesseAn(); zeichne(); }, 250);
+});
+document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+
+zeigeTab();
+setB(st.b);
+})();
+</script>
+</body>
+</html>

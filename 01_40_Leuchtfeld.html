@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Leuchtfeld</title>
+<style>
+  :root{ --bg:#12141a; --panel:#1c2029; --line:#2e3440; --text:#e8ecf4; --dim:#9aa4b8; --accent:#ffcc55; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%; background:var(--bg); color:var(--text);}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    font-size:17px; -webkit-user-select:none; user-select:none; overflow-x:hidden;
+  }
+  #menue{padding:12px 14px 30px; max-width:1000px; margin:0 auto;}
+  h1{font-size:21px; margin:4px 0 2px;}
+  .sub{color:var(--dim); font-size:14px; margin:0 0 14px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:12px;
+         padding:11px 13px; margin-bottom:14px;}
+  .panel h2{font-size:13px; margin:0 0 8px; color:var(--dim); font-weight:600;
+            letter-spacing:.04em; text-transform:uppercase;}
+  .check{margin:0; padding-left:20px; font-size:15.5px; line-height:1.6;}
+  .check b{color:var(--accent);}
+  .gitter{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px;}
+  .kachel{
+    border:1px solid var(--line); border-radius:12px; height:86px; cursor:pointer;
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:7px;
+    font-size:15px; font-weight:600; touch-action:manipulation; overflow:hidden;
+  }
+  .kachel span{
+    background:rgba(0,0,0,.55); color:#fff; padding:2px 9px; border-radius:7px; font-size:14px;
+  }
+  #feld{
+    position:fixed; inset:0; display:none; z-index:99; touch-action:none;
+  }
+  #hinweis{
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+    background:rgba(0,0,0,.6); color:#fff; padding:8px 16px; border-radius:9px;
+    font-size:15px; z-index:100; display:none; pointer-events:none;
+    transition:opacity .5s; opacity:1;
+  }
+  .fuss{color:var(--dim); font-size:13.5px; line-height:1.5; margin-top:4px;}
+</style>
+</head>
+<body>
+
+<div id="menue">
+  <h1>Leuchtfeld</h1>
+  <p class="sub">Der Bildschirm als Lichtquelle. Tippe eine Fl&auml;che an; tippe erneut, um zur&uuml;ckzukommen.</p>
+
+  <div class="panel">
+    <h2>Vor dem Versuch einstellen</h2>
+    <ol class="check">
+      <li>Helligkeit auf <b>Maximum</b>, automatische Helligkeit aus.</li>
+      <li><b>True Tone</b> und <b>Night Shift</b> ausschalten. Beide verf&auml;rben den Bildschirm,
+          und dann stimmen die Farben nicht mehr.</li>
+      <li>Automatische Sperre auf <b>Nie</b>.</li>
+    </ol>
+  </div>
+
+  <div class="panel">
+    <h2>Farben</h2>
+    <div class="gitter" id="farben"></div>
+  </div>
+
+  <div class="panel">
+    <h2>R&auml;tselfarben</h2>
+    <div class="gitter" id="raetsel"></div>
+    <p class="fuss" style="margin-top:10px;">
+      Woraus sind diese Farben zusammengesetzt? Pr&uuml;fe jede mit dem roten,
+      dem gr&uuml;nen und dem blauen Filter und notiere f&uuml;r jeden Filter:
+      <b>hell</b>, <b>schwach</b> oder <b>dunkel</b>.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>Formen</h2>
+    <div class="gitter" id="formen"></div>
+  </div>
+
+  <p class="fuss">
+    Halte das Ger&auml;t beim Versuch ruhig und schau nicht aus sehr kurzer Entfernung
+    dauerhaft in die helle Fl&auml;che.
+  </p>
+</div>
+
+<div id="feld"></div>
+<div id="hinweis">Tippen zum Zur&uuml;ck</div>
+
+<script>
+(function(){
+"use strict";
+
+var menue  = document.getElementById("menue");
+var feld   = document.getElementById("feld");
+var hinweis= document.getElementById("hinweis");
+var timer  = null;
+
+var FARBEN = [
+  ["Weiß",   "#ffffff", "#111"],
+  ["Rot",       "#ff0000", "#fff"],
+  ["Grün",  "#00ff00", "#111"],
+  ["Blau",      "#0000ff", "#fff"],
+  ["Gelb",      "#ffff00", "#111"],
+  ["Türkis","#00ffff", "#111"],
+  ["Magenta",   "#ff00ff", "#111"],
+  ["Schwarz",   "#000000", "#fff"]
+];
+
+/* Unbenannte Farben zur Analyse mit den Grundfiltern */
+var RAETSEL = [
+  ["A", "rgb(255,140,0)"],
+  ["B", "rgb(0,200,200)"],
+  ["C", "rgb(150,0,255)"],
+  ["D", "rgb(150,255,0)"],
+  ["E", "rgb(255,80,200)"],
+  ["F", "rgb(255,255,255)"]
+];
+
+var FORMEN = [
+  ["Weißer Streifen", "streifen"],
+  ["Weißer Spalt",    "spalt"],
+  ["Halb weiß, halb schwarz", "kante"]
+];
+
+function kachel(box, beschriftung, stil, aktion){
+  var el = document.createElement("div");
+  el.className = "kachel";
+  el.setAttribute("style", stil);
+  var s = document.createElement("span");
+  s.textContent = beschriftung;
+  el.appendChild(s);
+  el.addEventListener("click", aktion);
+  document.getElementById(box).appendChild(el);
+}
+
+FARBEN.forEach(function(f){
+  kachel("farben", f[0], "background:"+f[1]+";", function(){ zeigeFlaeche(f[1]); });
+});
+RAETSEL.forEach(function(r){
+  kachel("raetsel", r[0], "background:"+r[1]+";", function(){ zeigeFlaeche(r[1]); });
+});
+FORMEN.forEach(function(f){
+  var vorschau;
+  if (f[1]==="streifen")      vorschau = "background:linear-gradient(90deg,#000 0 38%,#fff 38% 62%,#000 62% 100%);";
+  else if (f[1]==="spalt")    vorschau = "background:linear-gradient(90deg,#000 0 48%,#fff 48% 52%,#000 52% 100%);";
+  else                        vorschau = "background:linear-gradient(90deg,#fff 0 50%,#000 50% 100%);";
+  kachel("formen", f[0], vorschau, function(){ zeigeForm(f[1]); });
+});
+
+function oeffne(hintergrund){
+  feld.setAttribute("style", "display:block;" + hintergrund);
+  menue.style.display = "none";
+  hinweis.style.display = "block";
+  hinweis.style.opacity = "1";
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(function(){ hinweis.style.opacity = "0"; }, 2200);
+}
+function zeigeFlaeche(farbe){ oeffne("background:"+farbe+";"); }
+function zeigeForm(art){
+  var g;
+  if (art==="streifen")   g = "background:#000;background:linear-gradient(90deg,#000 0 42%,#fff 42% 58%,#000 58% 100%);";
+  else if (art==="spalt") g = "background:#000;background:linear-gradient(90deg,#000 0 49.2%,#fff 49.2% 50.8%,#000 50.8% 100%);";
+  else                    g = "background:linear-gradient(90deg,#fff 0 50%,#000 50% 100%);";
+  oeffne(g);
+}
+function schliesse(){
+  feld.style.display = "none";
+  hinweis.style.display = "none";
+  menue.style.display = "";
+  if (timer){ clearTimeout(timer); timer = null; }
+}
+
+feld.addEventListener("click", schliesse);
+feld.addEventListener("touchstart", function(e){ e.preventDefault(); schliesse(); }, false);
+document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+})();
+</script>
+</body>
+</html>

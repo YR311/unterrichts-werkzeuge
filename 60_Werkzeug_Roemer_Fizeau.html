@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Rømer und Fizeau</title>
+<style>
+  :root{--bg:#12141a;--panel:#1c2029;--line:#2e3440;--text:#e8ecf4;--dim:#9aa4b8;--accent:#ffcc55;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+       font-size:17px;line-height:1.35;-webkit-user-select:none;user-select:none;
+       padding:10px 12px 28px;max-width:1000px;margin:0 auto;}
+  h1{font-size:20px;margin:2px 0 10px;}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;}
+  .tabs button{flex:1;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+         padding:11px 13px;margin-bottom:12px;}
+  .panel h2{font-size:13px;margin:0 0 8px;color:var(--dim);font-weight:600;
+            letter-spacing:.04em;text-transform:uppercase;}
+  button{font:inherit;font-size:16px;color:var(--text);background:#252b36;
+         border:1px solid var(--line);border-radius:9px;padding:11px 13px;
+         min-width:64px;min-height:46px;cursor:pointer;touch-action:manipulation;}
+  button:active{background:#333b49;}
+  button.on{background:var(--accent);border-color:var(--accent);color:#1a1400;font-weight:600;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;
+                    background:transparent;margin:0;touch-action:none;}
+  input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:#39414f;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:38px;height:38px;
+    border-radius:50%;background:var(--accent);border:2px solid #1a1400;margin-top:-14px;}
+  input[type=range]::-moz-range-track{height:10px;border-radius:5px;background:#39414f;}
+  input[type=range]::-moz-range-thumb{width:34px;height:34px;border:2px solid #1a1400;
+    border-radius:50%;background:var(--accent);}
+  canvas{width:100%;display:block;border-radius:10px;background:#07090d;
+         border:1px solid var(--line);}
+  .werte{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;}
+  .wert{font-size:20px;font-variant-numeric:tabular-nums;}
+  .wert .lbl{display:block;color:var(--dim);font-size:13.5px;}
+  .gross{font-size:26px;font-weight:700;color:var(--accent);}
+  .fuss{color:var(--dim);font-size:13.5px;line-height:1.5;}
+  .fuss b{color:var(--text);}
+</style>
+</head>
+<body>
+
+<h1>Werkzeug zu Station 1 und 2</h1>
+<div class="tabs" id="tabs"></div>
+
+<!-- ============ RØMER ============ -->
+<div id="roemer">
+  <canvas id="cvR"></canvas>
+  <div class="panel" style="margin-top:12px;">
+    <h2>Stellung der Erde auf ihrer Bahn</h2>
+    <div class="wert" style="margin-bottom:6px;"><span id="monText">0,0 Monate</span> nach der größten Nähe</div>
+    <input type="range" id="mon" min="0" max="120" value="0" step="1" aria-label="Monate">
+  </div>
+  <div class="werte">
+    <div class="wert"><span class="lbl">Abstand Erde–Jupiter</span><span id="dR">4,20 AE</span></div>
+    <div class="wert"><span class="lbl">zusätzlicher Lichtweg</span><span id="sR">0 m</span></div>
+    <div class="wert"><span class="lbl">Verspätung der Verfinsterung</span><span class="gross" id="tR">0 s</span></div>
+  </div>
+  <p class="fuss" style="margin-top:12px;">
+    <b>So liest du es:</b> Bei größter Nähe ist die Verspätung null. Schiebe die Erde
+    ein halbes Jahr weiter und lies ab, wie viel Zeit das Licht zusätzlich braucht.<br>
+    <b>Vereinfachung:</b> Jupiter steht hier fest. In Wirklichkeit wandert er in einem
+    halben Jahr ein Stück weiter — das ändert das Ergebnis nur wenig.
+    1 AE = 1,496·10¹¹ m ist der Abstand Erde–Sonne.
+  </p>
+</div>
+
+<!-- ============ FIZEAU ============ -->
+<div id="fizeau">
+  <canvas id="cvF"></canvas>
+  <div class="panel" style="margin-top:12px;">
+    <h2>Drehzahl des Zahnrades</h2>
+    <div class="wert" style="margin-bottom:6px;"><span class="gross" id="fText">0,0</span> Umdrehungen pro Sekunde</div>
+    <input type="range" id="dreh" min="0" max="300" value="0" step="1" aria-label="Drehzahl">
+  </div>
+  <div class="werte">
+    <div class="wert"><span class="lbl">Licht am Detektor</span><span class="gross" id="hellText">hell</span></div>
+    <div class="wert"><span class="lbl">Weg des Lichts, hin und zurück</span><span>17 266 m</span></div>
+    <div class="wert"><span class="lbl">Zähne des Rades</span><span>720</span></div>
+  </div>
+  <p class="fuss" style="margin-top:12px;">
+    <b>Deine Aufgabe:</b> Suche die kleinste Drehzahl, bei der das Licht ganz
+    verschwindet. Drehe danach weiter — was passiert?<br>
+    <b>Wichtig:</b> Dieses Werkzeug rechnet mit dem <b>heute bekannten</b> Wert der
+    Lichtgeschwindigkeit. Fizeau selbst maß 1849 einen anderen Wert. Vergleiche
+    deine gefundene Drehzahl mit seiner Angabe auf dem Stationsblatt.<br>
+    <b>Dies ist ein Modell</b>, kein Foto und keine Messung.
+  </p>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var C   = 2.998e8;      /* Lichtgeschwindigkeit in m/s */
+var AE  = 1.496e11;     /* Astronomische Einheit in m  */
+var RJ  = 5.20;         /* Abstand Jupiter-Sonne in AE */
+var LF  = 8633;         /* Fizeau: Entfernung zum Spiegel in m */
+var NF  = 720;          /* Fizeau: Zaehne */
+
+var st = {tab:"roemer", monate:0, f:0, phase:0};
+
+/* ---------------- Reiter ---------------- */
+var tabBox = document.getElementById("tabs");
+[["roemer","Rømer 1676"],["fizeau","Fizeau 1849"]].forEach(function(t){
+  var b = document.createElement("button");
+  b.textContent = t[1];
+  b.setAttribute("data-tab", t[0]);
+  b.addEventListener("click", function(){ st.tab = t[0]; zeigeTab(); });
+  tabBox.appendChild(b);
+});
+function zeigeTab(){
+  var bs = tabBox.querySelectorAll("button"), i;
+  for (i=0;i<bs.length;i++)
+    bs[i].className = (bs[i].getAttribute("data-tab")===st.tab) ? "on" : "";
+  document.getElementById("roemer").style.display = (st.tab==="roemer") ? "" : "none";
+  document.getElementById("fizeau").style.display = (st.tab==="fizeau") ? "" : "none";
+  groesse(); zeichne();
+}
+
+/* ---------------- Groessen ---------------- */
+var cvR = document.getElementById("cvR"), ctxR = cvR.getContext("2d");
+var cvF = document.getElementById("cvF"), ctxF = cvF.getContext("2d");
+var dpr = 1, WR = 0, HR = 0, WF = 0, HF = 0;
+
+function setz(cv, ctx, h){
+  var w = cv.clientWidth || 800;
+  cv.style.height = h + "px";
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return w;
+}
+function groesse(){
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (st.tab==="roemer"){ HR = 300; WR = setz(cvR, ctxR, HR); }
+  else { HF = 260; WF = setz(cvF, ctxF, HF); }
+}
+
+/* ---------------- Rechnung ---------------- */
+function abstandAE(monate){
+  var th = 2*Math.PI*monate/12;               /* 0 = groesste Naehe */
+  var ex = Math.cos(th), ey = Math.sin(th);   /* Erde in AE */
+  var dx = RJ - ex, dy = -ey;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+var D_MIN = RJ - 1;                            /* 4,20 AE */
+
+function fizeauHell(f){
+  /* k = wie viele halbe Zahnabstaende sich das Rad in der Laufzeit weiterdreht */
+  var k = 4*LF*NF*f/C;
+  var r = k % 2;
+  return Math.abs(1 - r);                      /* 1 = hell, 0 = dunkel */
+}
+
+/* ---------------- Zeichnen ---------------- */
+function zeichne(){
+  if (st.tab==="roemer") malRoemer(); else malFizeau();
+}
+
+function malRoemer(){
+  var W = WR, H = HR, ctx = ctxR;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = "#07090d"; ctx.fillRect(0,0,W,H);
+
+  var xS = 92, yM = H/2;
+  var skala = Math.min(46, (W - xS - 90)/RJ);   /* Pixel je AE */
+  var rE = skala;
+  var xJ = xS + RJ*skala;
+
+  /* Erdbahn */
+  ctx.strokeStyle = "#39414f"; ctx.lineWidth = 1.5;
+  ctx.setLineDash([4,5]);
+  ctx.beginPath(); ctx.arc(xS, yM, rE, 0, 2*Math.PI); ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* Sonne */
+  ctx.fillStyle = "#ffcc55";
+  ctx.beginPath(); ctx.arc(xS, yM, 11, 0, 2*Math.PI); ctx.fill();
+  ctx.fillStyle = "#9aa4b8"; ctx.font = "12px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "center"; ctx.fillText("Sonne", xS, yM+28);
+
+  /* Jupiter */
+  ctx.fillStyle = "#c08a5a";
+  ctx.beginPath(); ctx.arc(xJ, yM, 17, 0, 2*Math.PI); ctx.fill();
+  ctx.fillStyle = "#9aa4b8"; ctx.fillText("Jupiter", xJ, yM+36);
+
+  /* Io */
+  var thIo = st.phase*1.7;
+  var xI = xJ + 30*Math.cos(thIo), yI = yM + 30*Math.sin(thIo);
+  ctx.strokeStyle = "#3c4658"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(xJ, yM, 30, 0, 2*Math.PI); ctx.stroke();
+  ctx.fillStyle = "#e8ecf4";
+  ctx.beginPath(); ctx.arc(xI, yI, 4, 0, 2*Math.PI); ctx.fill();
+  ctx.fillStyle = "#5c6778"; ctx.font = "11px -apple-system,Arial,sans-serif";
+  ctx.fillText("Io", xJ+44, yM-26);
+
+  /* Erde */
+  var th = 2*Math.PI*st.monate/12;
+  var xE = xS + rE*Math.cos(th), yE = yM - rE*Math.sin(th);
+  ctx.fillStyle = "#59d0ff";
+  ctx.beginPath(); ctx.arc(xE, yE, 7, 0, 2*Math.PI); ctx.fill();
+  ctx.fillStyle = "#9aa4b8"; ctx.font = "12px -apple-system,Arial,sans-serif";
+  ctx.fillText("Erde", xE, yE-14);
+
+  /* Sichtlinie */
+  ctx.strokeStyle = "rgba(255,204,85,0.75)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(xE, yE); ctx.lineTo(xJ, yM); ctx.stroke();
+
+  /* Markierung der Position groesster Naehe */
+  ctx.strokeStyle = "#59d0ff"; ctx.lineWidth = 1; ctx.setLineDash([3,4]);
+  ctx.beginPath(); ctx.arc(xS + rE, yM, 5, 0, 2*Math.PI); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#5c6778"; ctx.font = "11px -apple-system,Arial,sans-serif";
+  ctx.fillText("größte Nähe", xS + rE, yM+22);
+
+  /* Werte */
+  var d = abstandAE(st.monate);
+  var s = (d - D_MIN)*AE;
+  var t = s/C;
+  document.getElementById("dR").textContent = d.toFixed(2).replace(".",",") + " AE";
+  document.getElementById("sR").textContent = (s/1e11).toFixed(2).replace(".",",") + " · 10¹¹ m";
+  var mm = Math.floor(t/60), ss = Math.round(t - 60*mm);
+  document.getElementById("tR").textContent =
+    (t < 60) ? Math.round(t) + " s" : (mm + " min " + ss + " s");
+  document.getElementById("monText").textContent =
+    st.monate.toFixed(1).replace(".",",") + " Monate";
+}
+
+function malFizeau(){
+  var W = WF, H = HF, ctx = ctxF;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = "#07090d"; ctx.fillRect(0,0,W,H);
+
+  var yM = 96;
+  var xQ = 40, xRad = 128, xBruch = W*0.55, xSp = W-46;
+  var hell = fizeauHell(st.f);
+
+  /* Lichtweg */
+  ctx.strokeStyle = "rgba(255,80,60," + (0.25 + 0.6*hell) + ")";
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(xQ+16, yM); ctx.lineTo(xRad-24, yM); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(xRad+24, yM); ctx.lineTo(xBruch-14, yM);
+  ctx.moveTo(xBruch+14, yM); ctx.lineTo(xSp-8, yM);
+  ctx.stroke();
+  /* Bruchzeichen fuer die verkuerzte Strecke */
+  ctx.strokeStyle = "#5c6778"; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(xBruch-16, yM+10); ctx.lineTo(xBruch-6, yM-10);
+  ctx.moveTo(xBruch+6, yM+10);  ctx.lineTo(xBruch+16, yM-10);
+  ctx.stroke();
+  ctx.fillStyle = "#5c6778"; ctx.font = "12px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "center"; ctx.fillText("8633 m", xBruch, yM+30);
+
+  /* Lichtquelle */
+  ctx.fillStyle = "#2b3240"; ctx.strokeStyle = "#5c6778"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.rect(xQ-16, yM-20, 32, 40); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#9aa4b8"; ctx.fillText("Licht", xQ, yM+38);
+
+  /* Spiegel */
+  ctx.fillStyle = "#d8dee9"; ctx.fillRect(xSp-4, yM-34, 8, 68);
+  ctx.fillStyle = "#9aa4b8"; ctx.fillText("Spiegel", xSp-6, yM+52);
+
+  /* Zahnrad */
+  var R = 46, z = 36;   /* gezeichnete Zaehne, nicht 720 */
+  ctx.save(); ctx.translate(xRad, yM); ctx.rotate(st.phase);
+  ctx.fillStyle = "#454e5e";
+  for (var i=0;i<z;i++){
+    var a0 = (i*2*Math.PI)/z, a1 = a0 + Math.PI/z;
+    ctx.beginPath();
+    ctx.arc(0,0,R,a0,a1); ctx.arc(0,0,R-16,a1,a0,true);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+  ctx.strokeStyle = "#39414f"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(xRad, yM, R-16, 0, 2*Math.PI); ctx.stroke();
+  ctx.fillStyle = "#2b3240";
+  ctx.beginPath(); ctx.arc(xRad, yM, 12, 0, 2*Math.PI); ctx.fill();
+  ctx.fillStyle = "#9aa4b8"; ctx.font = "12px -apple-system,Arial,sans-serif";
+  ctx.fillText("Zahnrad, 720 Zähne", xRad, yM+68);
+
+  /* Helligkeitsbalken */
+  var bx = 40, by = H-42, bw = W-80, bh = 22;
+  ctx.fillStyle = "#161a22"; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = "rgb(255," + Math.round(60+120*hell) + ",50)";
+  ctx.fillRect(bx, by, bw*hell, bh);
+  ctx.strokeStyle = "#3c4658"; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bw, bh);
+  ctx.fillStyle = "#9aa4b8"; ctx.font = "12px -apple-system,Arial,sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Helligkeit am Detektor", bx, by-8);
+
+  document.getElementById("fText").textContent = st.f.toFixed(1).replace(".",",");
+  var txt = (hell < 0.06) ? "dunkel" : (hell < 0.45 ? "schwach" : "hell");
+  document.getElementById("hellText").textContent = txt;
+}
+
+/* ---------------- Bedienung ---------------- */
+var monEl = document.getElementById("mon");
+monEl.addEventListener("input", function(){ st.monate = (+monEl.value)/10; anfordern(); });
+var drehEl = document.getElementById("dreh");
+drehEl.addEventListener("input", function(){ st.f = (+drehEl.value)/10; anfordern(); });
+
+var wartet = false;
+function anfordern(){
+  if (wartet) return;
+  wartet = true;
+  window.requestAnimationFrame(function(){ wartet = false; zeichne(); });
+}
+
+/* langsame Sichtdrehung, damit Rad und Io sich bewegen */
+function schleife(){
+  st.phase += 0.012;
+  zeichne();
+  window.requestAnimationFrame(schleife);
+}
+
+window.addEventListener("resize", function(){ groesse(); anfordern(); });
+window.addEventListener("orientationchange", function(){
+  setTimeout(function(){ groesse(); zeichne(); }, 250);
+});
+document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+
+zeigeTab();
+schleife();
+})();
+</script>
+</body>
+</html>

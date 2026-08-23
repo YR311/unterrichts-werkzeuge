@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Läuft JavaScript?</title>
+<style>
+  body{font-family:-apple-system,Arial,sans-serif;background:#12141a;color:#e8ecf4;
+       padding:24px;font-size:19px;line-height:1.4;}
+  #ergebnis{padding:18px;border-radius:12px;margin:18px 0;font-size:22px;font-weight:700;}
+  .nein{background:#5a1a1a;border:2px solid #b03030;}
+  .ja{background:#173d1d;border:2px solid #34a04a;}
+  canvas{width:100%;height:120px;display:block;border-radius:10px;
+         background:#07090d;border:1px solid #2e3440;}
+  p{color:#9aa4b8;font-size:15px;}
+</style>
+</head>
+<body>
+<h1>Läuft JavaScript?</h1>
+
+<div id="ergebnis" class="nein">
+  NEIN — JavaScript ist hier abgeschaltet.<br>
+  Diese Ansicht kann die Simulationen nicht darstellen.
+</div>
+
+<canvas id="cv"></canvas>
+<p>Oben muss ein gelber Balken erscheinen. Bleibt das Feld schwarz,
+zeichnet diese Ansicht kein Canvas.</p>
+
+<script>
+(function(){
+  "use strict";
+  var e = document.getElementById("ergebnis");
+  e.className = "ja";
+  e.innerHTML = "JA — JavaScript läuft.<br>Die Simulationen müssen hier funktionieren.";
+  var cv = document.getElementById("cv");
+  cv.width = cv.clientWidth || 600; cv.height = 120;
+  var c = cv.getContext("2d");
+  c.fillStyle = "#ffcc55"; c.fillRect(10,40,cv.width-20,40);
+  c.fillStyle = "#1a1400"; c.font = "20px -apple-system,Arial,sans-serif";
+  c.textAlign = "center"; c.fillText("Canvas zeichnet", cv.width/2, 66);
+})();
+</script>
+</body>
+</html>

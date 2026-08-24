@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Strahlenlabor – Lichtwege und offene Fragen</title>
+  <style>
+    :root{
+      --ink:#172033; --muted:#5e687b; --paper:#f5f7fb; --card:#fff;
+      --line:#d8deea; --blue:#2457d6; --blue2:#e9efff; --yellow:#ffd45e;
+      --green:#0c7c59; --red:#b83232; --shadow:0 10px 30px rgba(30,48,80,.10);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html{background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+    body{margin:0;min-height:100vh;font-size:18px;line-height:1.48}
+    button,input,textarea,select{font:inherit}
+    button{min-height:48px;border:0;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;touch-action:manipulation}
+    button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #ffbd2e;outline-offset:2px}
+    .app{min-height:100vh;padding-bottom:94px}
+    header{background:#15264d;color:#fff;padding:max(18px,env(safe-area-inset-top)) 22px 18px}
+    header .inner{max-width:980px;margin:auto;display:flex;gap:18px;align-items:flex-end;justify-content:space-between}
+    h1{font-size:clamp(25px,4vw,38px);line-height:1.08;margin:0 0 5px}
+    header p{margin:0;color:#dbe5ff;font-size:15px}
+    .pair{display:flex;gap:8px;align-items:center;white-space:nowrap}
+    .pair label{font-size:14px;color:#dbe5ff}
+    .pair select{min-height:44px;border-radius:10px;border:1px solid #9fb3e8;padding:4px 34px 4px 10px;background:#fff;color:var(--ink)}
+    .progress{max-width:980px;margin:16px auto 0;padding:0 18px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+    .progress button{min-height:42px;padding:6px 4px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:13px}
+    .progress button.current{background:var(--blue);color:#fff;border-color:var(--blue)}
+    .progress button.done{background:#e7f5ef;color:#07583e;border-color:#a9dcca}
+    main{max-width:980px;margin:18px auto;padding:0 18px}
+    .step{display:none}
+    .step.active{display:block}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,3vw,28px);box-shadow:var(--shadow);margin-bottom:16px}
+    h2{font-size:clamp(25px,4vw,34px);line-height:1.15;margin:0 0 8px}
+    h3{font-size:20px;margin:4px 0 10px}
+    p{margin:8px 0 14px}
+    .lead{font-size:20px;color:#33405a}
+    .tag{display:inline-flex;align-items:center;min-height:32px;border-radius:999px;background:var(--blue2);color:#193f9e;padding:3px 11px;font-size:14px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+    .callout{border-left:6px solid var(--yellow);background:#fff8dc;border-radius:10px;padding:12px 15px;margin:14px 0}
+    .model{border-left-color:var(--blue);background:var(--blue2)}
+    .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .choice{position:relative}
+    .choice input{position:absolute;opacity:0;pointer-events:none}
+    .choice label{display:flex;align-items:center;justify-content:center;text-align:center;min-height:64px;border:2px solid var(--line);border-radius:14px;padding:10px;background:#fff;font-weight:700;cursor:pointer}
+    .choice input:checked+label{border-color:var(--blue);background:var(--blue2);color:#163a92}
+    .checkline{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #edf0f5}
+    .checkline:last-child{border-bottom:0}
+    .checkline input{width:25px;height:25px;flex:0 0 auto;margin:2px 0;accent-color:var(--blue)}
+    label.field{display:block;font-weight:750;margin:15px 0 7px}
+    textarea,input[type="text"]{width:100%;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);padding:12px 13px;min-height:52px}
+    textarea{min-height:96px;resize:vertical}
+    .short{min-height:70px}
+    .primary{background:var(--blue);color:#fff}
+    .secondary{background:#e9edf5;color:#24314d}
+    .danger{background:#fdeaea;color:#852929}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+    .field-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+    .field-buttons button{min-height:74px;background:#172033;color:#fff;border:2px solid #fff;box-shadow:0 0 0 2px #172033}
+    .field-buttons button:nth-child(1){background:#fff;color:#172033;border-color:#172033}
+    .field-buttons button:nth-child(2){background:linear-gradient(90deg,#111 0 37%,#fff 37% 63%,#111 63%);text-shadow:0 1px 3px #000}
+    .field-buttons button:nth-child(3){background:linear-gradient(90deg,#111 0 48%,#fff 48% 52%,#111 52%);text-shadow:0 1px 3px #000}
+    .obs-row{display:grid;grid-template-columns:1.2fr repeat(3,1fr);gap:8px;align-items:center;margin:8px 0}
+    .obs-row strong{font-size:16px}
+    .obs-row .choice label{min-height:52px;font-size:15px;padding:7px}
+    .diagram-wrap{border:2px solid var(--line);border-radius:14px;background:#fcfdff;overflow:hidden}
+    #raySvg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+    .diagram-help{padding:10px 12px;background:#f0f3f8;color:#4b566b;font-size:15px}
+    .range-row{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center;margin:11px 0}
+    input[type="range"]{width:100%;accent-color:var(--blue)}
+    .feedback{min-height:50px;margin-top:12px;padding:12px 14px;border-radius:12px;background:#eef1f6;color:#3d475b}
+    .feedback.ok{background:#e5f5ed;color:#075a40}
+    .feedback.todo{background:#fff2df;color:#744414}
+    details{border:1px solid var(--line);border-radius:14px;background:#fff;margin:10px 0;overflow:hidden}
+    summary{padding:15px 17px;font-weight:800;cursor:pointer;list-style:none}
+    summary::-webkit-details-marker{display:none}
+    details[open] summary{background:#f0f4ff;color:#183e98;border-bottom:1px solid var(--line)}
+    .detail-body{padding:5px 17px 17px}
+    .optional{border:2px dashed #aeb9cd;background:#fafbfe;box-shadow:none}
+    .nav{position:fixed;z-index:40;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+    .nav-inner{max-width:980px;margin:auto;display:flex;justify-content:space-between;gap:12px}
+    .nav button{min-width:130px}
+    #lightField{position:fixed;inset:0;z-index:100;display:none;background:#fff;touch-action:manipulation}
+    #fieldHint{position:absolute;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(0,0,0,.72);color:#fff;border-radius:12px;padding:10px 16px;font-size:16px;opacity:1;transition:opacity .5s;white-space:nowrap;pointer-events:none}
+    #resultCard{position:fixed;inset:0;z-index:110;display:none;background:#112248;color:#fff;padding:max(30px,env(safe-area-inset-top)) max(28px,env(safe-area-inset-right)) max(30px,env(safe-area-inset-bottom)) max(28px,env(safe-area-inset-left));overflow:auto}
+    .result-inner{max-width:1000px;min-height:100%;margin:auto;display:flex;flex-direction:column;justify-content:center}
+    .result-pair{color:#ffd45e;font-size:clamp(18px,3vw,28px);font-weight:850;text-transform:uppercase;letter-spacing:.08em}
+    .result-label{color:#a9c3ff;font-size:clamp(16px,2.5vw,23px);font-weight:800;margin-top:28px;text-transform:uppercase}
+    .result-text{font-size:clamp(28px,5.2vw,54px);line-height:1.16;font-weight:800;margin:7px 0}
+    .result-close{position:fixed;right:max(15px,env(safe-area-inset-right));top:max(15px,env(safe-area-inset-top));background:rgba(255,255,255,.16);color:#fff}
+    .quiet{font-size:15px;color:var(--muted)}
+    .hidden{display:none!important}
+    @media(max-width:700px){
+      body{font-size:17px}.grid2,.grid3{grid-template-columns:1fr}.progress{grid-template-columns:repeat(3,1fr)}
+      header .inner{align-items:flex-start;flex-direction:column}.field-buttons{grid-template-columns:1fr}.obs-row{grid-template-columns:1fr repeat(3,1fr)}
+      .obs-row strong{grid-column:1/-1}.range-row{grid-template-columns:90px 1fr 38px}.nav button{min-width:105px}
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="inner">
+      <div>
+        <h1>Strahlenlabor</h1>
+        <p>Lichtwege untersuchen · Erklärungen prüfen · eine offene Frage festhalten</p>
+      </div>
+      <div class="pair">
+        <label for="pairNo">Euer Paar</label>
+        <select id="pairNo" data-save="pairNo" aria-label="Paarnummer">
+          <option value="1">Paar 1</option><option value="2">Paar 2</option><option value="3">Paar 3</option>
+          <option value="4">Paar 4</option><option value="5">Paar 5</option><option value="6">Paar 6</option><option value="7">Paar 7</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <nav class="progress" aria-label="Arbeitsschritte">
+    <button data-jump="0">1 Start</button><button data-jump="1">2 Versuch</button><button data-jump="2">3 Modell</button>
+    <button data-jump="3">4 Anwenden</button><button data-jump="4">5 Ergebnis</button><button data-jump="5">6 Sichern</button>
+  </nav>
+
+  <main>
+    <section class="step active" data-step="0">
+      <div class="card">
+        <span class="tag">Schritt 1 · gemeinsam starten</span>
+        <h2>Was vermutet ihr?</h2>
+        <p class="lead">Untersucht, wie die Form einer Lichtquelle den Schatten eines Bleistifts verändert.</p>
+        <div class="callout"><strong>Zuerst allein:</strong> Jede Person entscheidet. Erst danach vergleicht ihr eure Vermutungen.</div>
+        <h3>Wann erwartet ihr den schärfsten Schattenrand?</h3>
+        <div class="grid3">
+          <div class="choice"><input type="radio" name="prediction" id="pred1" value="Fläche" data-save="prediction"><label for="pred1">weiße Fläche</label></div>
+          <div class="choice"><input type="radio" name="prediction" id="pred2" value="Streifen" data-save="prediction"><label for="pred2">weißer Streifen</label></div>
+          <div class="choice"><input type="radio" name="prediction" id="pred3" value="Spalt" data-save="prediction"><label for="pred3">schmaler Spalt</label></div>
+        </div>
+        <label class="field" for="predictionWhy">Meine Begründung vor dem Versuch</label>
+        <textarea id="predictionWhy" class="short" data-save="predictionWhy" placeholder="Ich vermute …, weil …"></textarea>
+      </div>
+      <div class="card">
+        <h3>Arbeitsweise festlegen</h3>
+        <div class="checkline"><input type="checkbox" id="role1" data-save="role1"><label for="role1">Person A nutzt zunächst ihr iPad als Lichtquelle; Person B dokumentiert auf dem eigenen iPad.</label></div>
+        <div class="checkline"><input type="checkbox" id="role2" data-save="role2"><label for="role2">Nach dem ersten Durchgang wechseln wir Lichtquelle und Dokumentation.</label></div>
+        <div class="checkline"><input type="checkbox" id="setting1" data-save="setting1"><label for="setting1">Helligkeit maximal; True Tone und Night Shift aus.</label></div>
+        <div class="checkline"><input type="checkbox" id="setting2" data-save="setting2"><label for="setting2">Automatische Sperre möglichst auf „Nie“.</label></div>
+      </div>
+    </section>
+
+    <section class="step" data-step="1">
+      <div class="card">
+        <span class="tag">Schritt 2 · beobachten</span>
+        <h2>Schatten untersuchen</h2>
+        <p>Stellt das iPad auf, haltet einen Bleistift zwischen Bildschirm und weißes Papier. Vergleicht die drei Lichtquellen. Tippt auf eine Form, um sie bildschirmfüllend zu öffnen.</p>
+        <div class="field-buttons">
+          <button data-field="area">Weiße Fläche</button>
+          <button data-field="strip">Weißer Streifen</button>
+          <button data-field="slit">Schmaler Spalt</button>
+        </div>
+        <div class="callout"><strong>Wichtig:</strong> Erst beschreiben, was ihr seht. Eine Erklärung folgt in Schritt 3.</div>
+        <h3>Wie erscheint der Schattenrand?</h3>
+        <div class="obs-row"><strong>Fläche</strong>
+          <div class="choice"><input type="radio" name="areaEdge" id="ae1" value="weich" data-save="areaEdge"><label for="ae1">weich</label></div>
+          <div class="choice"><input type="radio" name="areaEdge" id="ae2" value="mittel" data-save="areaEdge"><label for="ae2">mittel</label></div>
+          <div class="choice"><input type="radio" name="areaEdge" id="ae3" value="scharf" data-save="areaEdge"><label for="ae3">scharf</label></div>
+        </div>
+        <div class="obs-row"><strong>Streifen</strong>
+          <div class="choice"><input type="radio" name="stripEdge" id="se1" value="weich" data-save="stripEdge"><label for="se1">weich</label></div>
+          <div class="choice"><input type="radio" name="stripEdge" id="se2" value="mittel" data-save="stripEdge"><label for="se2">mittel</label></div>
+          <div class="choice"><input type="radio" name="stripEdge" id="se3" value="scharf" data-save="stripEdge"><label for="se3">scharf</label></div>
+        </div>
+        <div class="obs-row"><strong>Spalt</strong>
+          <div class="choice"><input type="radio" name="slitEdge" id="sle1" value="weich" data-save="slitEdge"><label for="sle1">weich</label></div>
+          <div class="choice"><input type="radio" name="slitEdge" id="sle2" value="mittel" data-save="slitEdge"><label for="sle2">mittel</label></div>
+          <div class="choice"><input type="radio" name="slitEdge" id="sle3" value="scharf" data-save="slitEdge"><label for="sle3">scharf</label></div>
+        </div>
+        <label class="field" for="distanceObs">Was verändert sich, wenn ihr den Bleistift näher an das iPad oder näher an das Papier bewegt?</label>
+        <textarea id="distanceObs" data-save="distanceObs" placeholder="Wir beobachten …"></textarea>
+        <label class="field" for="pureObservation">Euer genauester Beobachtungssatz – noch ohne Erklärung</label>
+        <textarea id="pureObservation" data-save="pureObservation" placeholder="Bei … ist …; dagegen …"></textarea>
+      </div>
+    </section>
+
+    <section class="step" data-step="2">
+      <div class="card">
+        <span class="tag">Schritt 3 · erklären</span>
+        <h2>Mit dem Strahlenmodell arbeiten</h2>
+        <div class="callout model"><strong>Modellregel:</strong> Im Strahlenmodell stellen wir Richtung und Weg des Lichts durch gedachte gerade Linien mit Pfeil dar. Ein Lichtstrahl beginnt an einer Quelle und endet dort, wo Licht auf Materie trifft.</div>
+        <p>Zieht von <strong>verschiedenen Stellen der ausgedehnten Quelle</strong> Strahlen zum Schirm. Der Bleistift blockiert manche Lichtwege. Markiert anschließend den vermuteten Schattenbereich.</p>
+        <div class="diagram-wrap">
+          <svg id="raySvg" viewBox="0 0 600 360" role="img" aria-label="Zeichenfläche mit Lichtquelle, Bleistift und Schirm">
+            <defs>
+              <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L8,3 z" fill="#2457d6"/></marker>
+              <filter id="soft"><feGaussianBlur stdDeviation="3"/></filter>
+            </defs>
+            <rect x="0" y="0" width="600" height="360" fill="#fcfdff"/>
+            <rect id="shadowBand" x="525" y="145" width="14" height="70" rx="5" fill="#667085" opacity=".45"/>
+            <line x1="532" y1="35" x2="532" y2="325" stroke="#172033" stroke-width="8" stroke-linecap="round"/>
+            <text x="506" y="345" font-size="15" fill="#4b566b">Schirm</text>
+            <g id="rayLayer"></g>
+            <circle cx="285" cy="180" r="26" fill="#d49a52" stroke="#6f4921" stroke-width="4"/>
+            <line x1="285" y1="154" x2="285" y2="206" stroke="#49301a" stroke-width="3"/>
+            <text x="248" y="232" font-size="15" fill="#4b566b">Bleistift</text>
+            <rect x="54" y="105" width="28" height="150" rx="10" fill="#ffd45e" stroke="#a96b00" stroke-width="4"/>
+            <circle cx="68" cy="115" r="5" fill="#b83232"/><circle cx="68" cy="180" r="5" fill="#b83232"/><circle cx="68" cy="245" r="5" fill="#b83232"/>
+            <text x="34" y="222" font-size="15" fill="#4b566b">Quelle</text>
+            <line id="previewRay" x1="68" y1="180" x2="68" y2="180" stroke="#2457d6" stroke-width="4" stroke-dasharray="8 7" opacity="0"/>
+          </svg>
+          <div class="diagram-help">An unterschiedlichen Stellen der gelben Quelle starten und bis zum Schirm ziehen. Mindestens vier Lichtwege einzeichnen.</div>
+        </div>
+        <div class="actions"><button class="secondary" id="undoRay">Letzten Strahl löschen</button><button class="danger" id="resetRays">Zeichnung zurücksetzen</button></div>
+        <h3 style="margin-top:20px">Schatten am Schirm markieren</h3>
+        <div class="range-row"><label for="shadowTop">oberer Rand</label><input id="shadowTop" type="range" min="45" max="290" value="145" data-save="shadowTop"><output id="topOut">145</output></div>
+        <div class="range-row"><label for="shadowBottom">unterer Rand</label><input id="shadowBottom" type="range" min="70" max="315" value="215" data-save="shadowBottom"><output id="bottomOut">215</output></div>
+        <div class="actions"><button class="primary" id="checkDiagram">Zeichnung selbst prüfen</button></div>
+        <div id="diagramFeedback" class="feedback" aria-live="polite">Die Prüfung bewertet die Modellregeln, nicht die Schönheit der Zeichnung.</div>
+        <label class="field" for="shadowExplain">Erklärt euren Schattenbefund mit der Zeichnung.</label>
+        <textarea id="shadowExplain" data-save="shadowExplain" placeholder="Der Schatten entsteht, weil … Der Rand verändert sich, weil …"></textarea>
+      </div>
+    </section>
+
+    <section class="step" data-step="3">
+      <div class="card">
+        <span class="tag">Schritt 4 · Reichweite prüfen</span>
+        <h2>Was zeigt das Modell – was bleibt offen?</h2>
+        <p>Bearbeitet <strong>CD und Bildschirm</strong>. Trennt jeweils einen möglichen Lichtweg von einer Frage, die das Strahlenmodell heute noch nicht beantwortet. Der Laserpointer ist ein Kurzcheck, falls Zeit bleibt.</p>
+        <details open>
+          <summary>CD im weißen Sonnenlicht</summary>
+          <div class="detail-body"><label class="field" for="cdPath">Das Strahlenmodell kann zeigen …</label><textarea class="short" id="cdPath" data-save="cdPath"></textarea><label class="field" for="cdOpen">Offen bleibt …</label><textarea class="short" id="cdOpen" data-save="cdOpen"></textarea></div>
+        </details>
+        <details>
+          <summary>Bildschirm</summary>
+          <div class="detail-body"><label class="field" for="screenPath">Das Strahlenmodell kann zeigen …</label><textarea class="short" id="screenPath" data-save="screenPath"></textarea><label class="field" for="screenOpen">Offen bleibt …</label><textarea class="short" id="screenOpen" data-save="screenOpen"></textarea></div>
+        </details>
+        <details>
+          <summary>Optionaler Kurzcheck: Laserpointer</summary>
+          <div class="detail-body"><label class="field" for="laserPath">Das Strahlenmodell kann zeigen …</label><textarea class="short" id="laserPath" data-save="laserPath"></textarea><label class="field" for="laserOpen">Offen bleibt …</label><textarea class="short" id="laserOpen" data-save="laserOpen"></textarea></div>
+        </details>
+      </div>
+      <div class="card optional">
+        <span class="tag">Vertiefung · wenn Zeit bleibt</span>
+        <h3>Zwei Lichtquellen statt einer</h3>
+        <p>Stellt euch zwei kleine, getrennte Lichtquellen vor. Sagt zuerst vorher: Wie viele Schattenbereiche können hinter dem Bleistift entstehen? Begründet anschließend mit geraden Lichtwegen.</p>
+        <textarea data-save="extension" aria-label="Antwort zur Vertiefung" placeholder="Unsere Vorhersage und Begründung …"></textarea>
+      </div>
+    </section>
+
+    <section class="step" data-step="4">
+      <div class="card">
+        <span class="tag">Schritt 5 · Paarprodukt</span>
+        <h2>Ergebniskarte für die digitale Galerie</h2>
+        <p>Formuliert so, dass andere Paare euren Befund ohne Erklärung erkennen und eure offene Frage verstehen können. Stellt das iPad danach am vereinbarten Ort auf.</p>
+        <label class="field" for="galleryObservation">Eine Beobachtung ohne Erklärung</label>
+        <textarea id="galleryObservation" data-save="galleryObservation" placeholder="Bei … beobachten wir …"></textarea>
+        <label class="field" for="galleryQuestion">Eine offene Frage zu CD oder Bildschirm</label>
+        <textarea id="galleryQuestion" data-save="galleryQuestion" placeholder="Wie / Warum …?"></textarea>
+        <div class="actions"><button class="primary" id="showResult">Ergebniskarte groß anzeigen</button><button class="secondary" id="copyResult">Text kopieren</button></div>
+        <p id="copyFeedback" class="quiet" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="step" data-step="5">
+      <div class="card">
+        <span class="tag">Schritt 6 · allein sichern</span>
+        <h2>Was nimmst du mit?</h2>
+        <div class="callout"><strong>Jetzt wieder allein:</strong> Lies zuerst die Ergebniskarten der anderen Paare. Formuliere danach deine beiden Sätze.</div>
+        <label class="field" for="exitCan">Das Strahlenmodell hilft mir …</label>
+        <textarea id="exitCan" data-save="exitCan" placeholder="… Lichtwege / Schatten zu …"></textarea>
+        <label class="field" for="exitOpen">Offen bleibt …</label>
+        <textarea id="exitOpen" data-save="exitOpen" placeholder="… woher / wie …"></textarea>
+        <div class="callout model" id="finalSentence"><strong>Abgleich:</strong> Das Strahlenmodell beschreibt Lichtwege, aber nicht, welche Farbe Licht hat oder wie aus weiß erscheinendem Licht verschiedene Farbeindrücke entstehen. In der nächsten Doppelstunde untersuchen wir mit Farbfiltern, welche Farben transparentes Material hindurchlässt.</div>
+        <div class="actions"><button class="secondary" id="exportText">Meine Sicherung kopieren</button></div>
+        <p class="quiet">Die Einträge bleiben auf diesem iPad gespeichert. Schließt die Seite erst nach dem Unterricht.</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="nav"><div class="nav-inner"><button class="secondary" id="prev">Zurück</button><button class="primary" id="next">Weiter</button></div></div>
+</div>
+
+<div id="lightField" aria-label="Bildschirmfüllende Lichtquelle"><div id="fieldHint">Tippen: zurück zum Versuch</div></div>
+
+<div id="resultCard" role="dialog" aria-modal="true" aria-label="Ergebniskarte">
+  <button class="result-close" id="closeResult">Bearbeiten</button>
+  <div class="result-inner">
+    <div class="result-pair" id="resultPair">Paar 1</div>
+    <div class="result-label">Unsere Beobachtung</div><div class="result-text" id="resultObservation"></div>
+    <div class="result-label">Unsere offene Frage</div><div class="result-text" id="resultQuestion"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY="bgy24a-strahlenlabor-v1";
+  var state={step:0,rays:[]};
+  try{state=Object.assign(state,JSON.parse(localStorage.getItem(KEY)||"{}"));}catch(e){}
+  var steps=Array.from(document.querySelectorAll(".step"));
+  var progress=Array.from(document.querySelectorAll("[data-jump]"));
+  var saveEls=Array.from(document.querySelectorAll("[data-save]"));
+
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+  function valueOf(el){return el.type==="checkbox"?el.checked:el.value;}
+  function restore(){
+    saveEls.forEach(function(el){
+      var key=el.dataset.save;
+      if(!(key in state))return;
+      if(el.type==="checkbox")el.checked=!!state[key];
+      else if(el.type==="radio")el.checked=state[key]===el.value;
+      else el.value=state[key];
+    });
+  }
+  saveEls.forEach(function(el){el.addEventListener("input",function(){state[el.dataset.save]=valueOf(el);save();if(el.type==="range")updateShadow();});});
+
+  function stepDone(i){
+    var keys=[
+      ["prediction","predictionWhy","role1","setting1"],
+      ["areaEdge","stripEdge","slitEdge","pureObservation"],
+      ["shadowExplain"],
+      ["cdPath","cdOpen","screenPath","screenOpen"],
+      ["galleryObservation","galleryQuestion"],
+      ["exitCan","exitOpen"]
+    ][i];
+    return keys.every(function(k){return state[k]===true||String(state[k]||"").trim().length>0;});
+  }
+  function showStep(n){
+    state.step=Math.max(0,Math.min(steps.length-1,n));save();
+    steps.forEach(function(s,i){s.classList.toggle("active",i===state.step);});
+    progress.forEach(function(b,i){b.classList.toggle("current",i===state.step);b.classList.toggle("done",i!==state.step&&stepDone(i));});
+    document.getElementById("prev").disabled=state.step===0;
+    document.getElementById("next").textContent=state.step===steps.length-1?"Zum Start":"Weiter";
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  progress.forEach(function(b){b.addEventListener("click",function(){showStep(Number(b.dataset.jump));});});
+  document.getElementById("prev").addEventListener("click",function(){showStep(state.step-1);});
+  document.getElementById("next").addEventListener("click",function(){showStep(state.step===steps.length-1?0:state.step+1);});
+
+  var field=document.getElementById("lightField"),fieldHint=document.getElementById("fieldHint"),hintTimer;
+  function openField(kind){
+    var bg="#fff";
+    if(kind==="strip")bg="linear-gradient(90deg,#000 0 38%,#fff 38% 62%,#000 62% 100%)";
+    if(kind==="slit")bg="linear-gradient(90deg,#000 0 48.8%,#fff 48.8% 51.2%,#000 51.2% 100%)";
+    field.style.background=bg;field.style.display="block";fieldHint.style.opacity="1";
+    clearTimeout(hintTimer);hintTimer=setTimeout(function(){fieldHint.style.opacity="0";},2200);
+    if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen().catch(function(){});}
+  }
+  document.querySelectorAll("[data-field]").forEach(function(b){b.addEventListener("click",function(){openField(b.dataset.field);});});
+  field.addEventListener("click",function(){field.style.display="none";if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});});
+
+  var svg=document.getElementById("raySvg"),rayLayer=document.getElementById("rayLayer"),preview=document.getElementById("previewRay");
+  var drawing=false,activeSource={x:68,y:180},source={x:68,top:105,bottom:255},pencil={x:285,y:180,r:29};
+  function svgPoint(evt){var p=svg.createSVGPoint();p.x=evt.clientX;p.y=evt.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+  function hitCircle(start,x2,y2){
+    var dx=x2-start.x,dy=y2-start.y,fx=start.x-pencil.x,fy=start.y-pencil.y;
+    var a=dx*dx+dy*dy,b=2*(fx*dx+fy*dy),c=fx*fx+fy*fy-pencil.r*pencil.r;
+    var d=b*b-4*a*c;if(d<0)return null;d=Math.sqrt(d);
+    var t1=(-b-d)/(2*a),t2=(-b+d)/(2*a),t=Math.min(t1,t2);
+    if(t>=0&&t<=1)return{x:start.x+t*dx,y:start.y+t*dy};return null;
+  }
+  function renderRays(){
+    rayLayer.replaceChildren();
+    state.rays.forEach(function(r){
+      var l=document.createElementNS("http://www.w3.org/2000/svg","line");
+      l.setAttribute("x1",r.startX||68);l.setAttribute("y1",r.startY||180);l.setAttribute("x2",r.endX);l.setAttribute("y2",r.endY);
+      l.setAttribute("stroke",r.blocked?"#b83232":"#2457d6");l.setAttribute("stroke-width","4");l.setAttribute("stroke-linecap","round");
+      if(!r.blocked)l.setAttribute("marker-end","url(#arrow)");rayLayer.appendChild(l);
+      if(r.blocked){var x=document.createElementNS("http://www.w3.org/2000/svg","circle");x.setAttribute("cx",r.endX);x.setAttribute("cy",r.endY);x.setAttribute("r","5");x.setAttribute("fill","#b83232");rayLayer.appendChild(x);}
+    });
+  }
+  svg.addEventListener("pointerdown",function(e){var p=svgPoint(e);if(Math.abs(p.x-source.x)>45||p.y<source.top-20||p.y>source.bottom+20)return;activeSource={x:source.x,y:Math.max(source.top,Math.min(source.bottom,p.y))};drawing=true;svg.setPointerCapture(e.pointerId);preview.setAttribute("x1",activeSource.x);preview.setAttribute("y1",activeSource.y);preview.setAttribute("opacity","1");preview.setAttribute("x2",p.x);preview.setAttribute("y2",p.y);});
+  svg.addEventListener("pointermove",function(e){if(!drawing)return;var p=svgPoint(e);preview.setAttribute("x2",Math.max(source.x+10,Math.min(532,p.x)));preview.setAttribute("y2",Math.max(35,Math.min(325,p.y)));});
+  svg.addEventListener("pointerup",function(e){
+    if(!drawing)return;drawing=false;preview.setAttribute("opacity","0");var p=svgPoint(e);
+    var target={x:532,y:Math.max(35,Math.min(325,p.y))},hit=hitCircle(activeSource,target.x,target.y),end=hit||target;
+    state.rays.push({startX:activeSource.x,startY:activeSource.y,endX:end.x,endY:end.y,blocked:!!hit,targetY:target.y});save();renderRays();
+  });
+  document.getElementById("undoRay").addEventListener("click",function(){state.rays.pop();save();renderRays();});
+  document.getElementById("resetRays").addEventListener("click",function(){state.rays=[];save();renderRays();document.getElementById("diagramFeedback").className="feedback";document.getElementById("diagramFeedback").textContent="Die Prüfung bewertet die Modellregeln, nicht die Schönheit der Zeichnung.";});
+  function updateShadow(){
+    var top=Number(document.getElementById("shadowTop").value),bottom=Number(document.getElementById("shadowBottom").value);
+    if(top>bottom-10){if(document.activeElement.id==="shadowTop")top=bottom-10;else bottom=top+10;document.getElementById("shadowTop").value=top;document.getElementById("shadowBottom").value=bottom;state.shadowTop=String(top);state.shadowBottom=String(bottom);save();}
+    document.getElementById("shadowBand").setAttribute("y",top);document.getElementById("shadowBand").setAttribute("height",bottom-top);
+    document.getElementById("topOut").textContent=top;document.getElementById("bottomOut").textContent=bottom;
+  }
+  document.getElementById("checkDiagram").addEventListener("click",function(){
+    var blocked=state.rays.filter(function(r){return r.blocked;}).length;
+    var sourceLevels=state.rays.map(function(r){return r.startY||180;});
+    var usesExtent=sourceLevels.length>1&&(Math.max.apply(null,sourceLevels)-Math.min.apply(null,sourceLevels)>35);
+    var upper=state.rays.some(function(r){return !r.blocked&&r.targetY<pencil.y-pencil.r;});
+    var lower=state.rays.some(function(r){return !r.blocked&&r.targetY>pencil.y+pencil.r;});
+    var todo=[];if(state.rays.length<4)todo.push("mindestens vier Lichtwege");if(!usesExtent)todo.push("Startpunkte an verschiedenen Stellen der Quelle");if(!blocked)todo.push("einen am Bleistift endenden Lichtweg");if(!(upper&&lower))todo.push("Lichtwege oberhalb und unterhalb des Bleistifts");
+    var f=document.getElementById("diagramFeedback");
+    if(todo.length){f.className="feedback todo";f.textContent="Prüfe noch: "+todo.join(", ")+".";}else{f.className="feedback ok";f.textContent="Die Modellregeln sind erkennbar. Prüft nun, ob euer markierter Schattenbereich zu euren Lichtwegen passt.";}
+  });
+
+  function text(id){return document.getElementById(id).value.trim();}
+  function showResult(){
+    document.getElementById("resultPair").textContent="Paar "+document.getElementById("pairNo").value;
+    document.getElementById("resultObservation").textContent=text("galleryObservation")||"Beobachtung noch eintragen";
+    document.getElementById("resultQuestion").textContent=text("galleryQuestion")||"Offene Frage noch eintragen";
+    document.getElementById("resultCard").style.display="block";
+  }
+  document.getElementById("showResult").addEventListener("click",showResult);
+  document.getElementById("closeResult").addEventListener("click",function(){document.getElementById("resultCard").style.display="none";});
+  async function copy(content,feedback){try{await navigator.clipboard.writeText(content);feedback.textContent="Kopiert.";}catch(e){feedback.textContent="Kopieren ist in diesem Browser blockiert. Der Text bleibt hier gespeichert.";}}
+  document.getElementById("copyResult").addEventListener("click",function(){copy("Paar "+document.getElementById("pairNo").value+"\nBeobachtung: "+text("galleryObservation")+"\nOffene Frage: "+text("galleryQuestion"),document.getElementById("copyFeedback"));});
+  document.getElementById("exportText").addEventListener("click",function(){copy("Das Strahlenmodell hilft mir "+text("exitCan")+"\nOffen bleibt "+text("exitOpen"),document.querySelector(".step[data-step='5'] .quiet"));});
+
+  restore();renderRays();updateShadow();showStep(Number(state.step)||0);
+  if("wakeLock" in navigator){navigator.wakeLock.request("screen").catch(function(){});}
+  window.__STRAHLENLABOR__={state:state,showStep:showStep,openField:openField,renderRays:renderRays};
+  if(new URLSearchParams(location.search).has("selftest")){
+    var required=["raySvg","lightField","resultCard","showResult","checkDiagram","galleryObservation","exitCan"];
+    document.title=(required.every(function(id){return !!document.getElementById(id);})?"OK – ":"FEHLER – ")+document.title;
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vom Zufluss zur Mengenfunktion – BGY 24e</title>
+  <style>
+    :root { --navy:#123b5d; --blue:#1976a8; --blue-light:#dceff8; --orange:#c85f1d; --orange-light:#fff0e5; --ink:#17212b; --muted:#586775; --line:#c9d5de; --paper:#fff; --ground:#eef3f6; --focus:#6a35e8; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--ground); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.45; }
+    button,input { font:inherit; }
+    h1,h2,p { margin-top:0; }
+    .shell { width:min(1180px,calc(100% - 24px)); margin:18px auto 40px; }
+    header { display:flex; gap:20px; align-items:end; justify-content:space-between; padding:18px 22px; color:#fff; background:var(--navy); border-radius:16px 16px 0 0; }
+    h1 { margin-bottom:4px; font-size:clamp(1.45rem,3vw,2.15rem); }
+    header p { margin-bottom:0; color:#dce9f2; }
+    .tag { white-space:nowrap; font-weight:700; }
+    .stages { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px; background:#d9e3ea; }
+    .stage-button,.action,.point-button { min-height:46px; border:2px solid transparent; border-radius:10px; padding:9px 14px; cursor:pointer; font-weight:750; }
+    .stage-button { color:var(--navy); background:#fff; }
+    .stage-button[aria-pressed="true"] { color:#fff; background:var(--blue); }
+    .stage-button:hover,.action:hover,.point-button:hover { filter:brightness(.96); }
+    button:focus-visible,input:focus-visible { outline:4px solid var(--focus); outline-offset:2px; }
+    main { display:grid; grid-template-columns:minmax(0,1fr) 370px; gap:16px; padding:16px; background:var(--paper); border-radius:0 0 16px 16px; box-shadow:0 8px 28px rgba(25,49,66,.12); }
+    .graphs,.side { display:grid; gap:14px; align-content:start; }
+    .card { border:1px solid var(--line); border-radius:13px; padding:14px; background:#fff; }
+    .card h2 { margin-bottom:4px; font-size:1.08rem; color:var(--navy); }
+    .card p { margin-bottom:9px; color:var(--muted); }
+    canvas { display:block; width:100%; height:270px; border-radius:8px; background:#fff; }
+    .control-card { background:#f6f9fb; }
+    .slider-row { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; }
+    input[type="range"] { width:100%; accent-color:var(--blue); }
+    output { min-width:58px; text-align:center; font-size:1.25rem; font-weight:800; color:var(--navy); }
+    .metrics { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+    .metric { padding:10px; border-radius:9px; background:var(--blue-light); }
+    .metric strong { display:block; color:var(--navy); font-size:1.08rem; }
+    .metric span { display:block; color:var(--muted); font-size:.84rem; }
+    [hidden] { display:none !important; }
+    .prompt { border-left:5px solid var(--orange); background:var(--orange-light); }
+    .prompt strong { color:#873d10; }
+    .point-buttons { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; }
+    .point-button { color:var(--navy); background:#e7eef3; }
+    .point-button[aria-pressed="true"] { color:#fff; background:var(--orange); }
+    .observations { margin:8px 0 12px; padding-left:22px; }
+    .observations li { margin-bottom:6px; }
+    .action { width:100%; color:#fff; background:var(--orange); }
+    .action.secondary { color:var(--navy); background:#e7eef3; }
+    .result { margin-top:10px; padding:11px; border:2px solid var(--blue); border-radius:9px; background:var(--blue-light); }
+    .result .formula { margin:4px 0; text-align:center; color:var(--navy); font-size:1.25rem; font-weight:800; }
+    .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:8px; color:var(--muted); font-size:.9rem; }
+    .key::before { content:""; display:inline-block; width:17px; height:9px; margin-right:6px; border-radius:2px; background:var(--blue); }
+    .key.area::before { background:rgba(25,118,168,.25); border:1px solid var(--blue); }
+    .key.tangent::before { height:3px; background:var(--orange); }
+    .small { font-size:.88rem; color:var(--muted); }
+    .notation { border-top:1px solid var(--line); padding-top:9px; margin-top:10px; }
+    @media (max-width:880px) { main { grid-template-columns:1fr; } .side { grid-template-columns:repeat(2,minmax(0,1fr)); } .control-card,.prompt,.recognition { grid-column:1 / -1; } }
+    @media (max-width:620px) { .shell { width:100%; margin-top:0; } header { border-radius:0; align-items:start; } .tag { display:none; } .stages { grid-template-columns:1fr; } main { border-radius:0; padding:10px; } .side { grid-template-columns:1fr; } canvas { height:235px; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div><h1>Vom Zufluss zur Mengenfunktion</h1><p>Fläche, Tankmenge und Steigung in einem Modell</p></div>
+      <div class="tag">BGY 24e · 25.08.2026</div>
+    </header>
+    <nav class="stages" aria-label="Ansichten">
+      <button class="stage-button" data-stage="1" aria-pressed="true">1 · Endzeit und Menge</button>
+      <button class="stage-button" data-stage="2" aria-pressed="false">2 · Die beiden Graphen</button>
+      <button class="stage-button" data-stage="3" aria-pressed="false">3 · Graphen vergleichen</button>
+    </nav>
+    <main>
+      <section class="graphs" aria-label="Graphische Darstellungen">
+        <article class="card">
+          <h2 id="rateTitle">Zuflussrate z(t)</h2>
+          <p id="rateHint">Die blaue Fläche reicht vom Start bis zur gewählten Endzeit x.</p>
+          <canvas id="rateCanvas" aria-label="Graph der Zuflussrate mit markierter Fläche"></canvas>
+          <div class="legend"><span class="key" id="rateLegend">Zuflussrate z(t)</span><span class="key area" id="areaLegend">Menge bis x</span><span class="key tangent" id="ratePointLegend" hidden>ausgewählte Stelle</span></div>
+        </article>
+        <article class="card">
+          <h2 id="amountTitle">Aufgelaufene Tankmenge M(x)</h2>
+          <p id="amountHint">Zu jeder Endzeit x gehört genau ein Punkt (x | M(x)).</p>
+          <canvas id="amountCanvas" aria-label="Graph der aufgelaufenen Tankmenge"></canvas>
+          <div class="legend"><span class="key" id="amountLegend">Mengenfunktion M</span><span class="key tangent" id="tangentLegend" hidden>Tangente an B</span></div>
+        </article>
+      </section>
+      <aside class="side" aria-label="Steuerung und Arbeitsaufträge">
+        <section class="card control-card">
+          <h2 id="controlTitle">Endzeit verändern</h2>
+          <label id="sliderLabel" for="xSlider">Endzeit x in Minuten</label>
+          <div class="slider-row"><input id="xSlider" type="range" min="0" max="6" value="3" step="0.1"><output id="xOutput" for="xSlider">3,0</output></div>
+          <div class="metrics" aria-live="polite">
+            <div class="metric"><span id="rateMetricLabel">Rate an der Endzeit</span><strong id="rateValue">31,0 L/min</strong></div>
+            <div class="metric"><span id="amountMetricLabel">Menge bis zur Endzeit</span><strong id="amountValue">57,0 L</strong></div>
+          </div>
+        </section>
+        <section class="card prompt phase-panel" data-panel="1">
+          <h2>Fläche und Punkt</h2>
+          <p><strong>Beobachten Sie:</strong> Was verändert sich, wenn x verschoben wird? Was bedeutet der Punkt im unteren Koordinatensystem?</p>
+          <p class="small">Der vollständige Graph von M wird erst in der nächsten Ansicht eingeblendet.</p>
+        </section>
+        <section class="card prompt phase-panel" data-panel="2" hidden>
+          <h2>Höhe und Steilheit</h2>
+          <p>Vergleichen Sie x = 1, x = 3 und x = 5. Wo ist z hoch? Wo ist M besonders steil?</p>
+          <p class="small">Formulieren Sie den Zusammenhang zunächst ohne Ableitungsformel.</p>
+        </section>
+        <section class="card recognition phase-panel" data-panel="3" hidden>
+          <h2>Ein zweites Graphenpaar</h2>
+          <p>Oben sehen Sie die Funktion r, unten die Funktion B. Prüfen Sie nur die drei Stellen, an denen sich etwas Entscheidendes erkennen lässt.</p>
+          <div class="point-buttons" aria-label="Stelle auswählen"><button class="point-button" data-point="1" aria-pressed="false">u = 1</button><button class="point-button" data-point="2" aria-pressed="true">u = 2</button><button class="point-button" data-point="3" aria-pressed="false">u = 3</button></div>
+          <ol class="observations"><li>Wo r positiv oder negativ ist: Steigt oder fällt B?</li><li>Was geschieht bei den Nullstellen von r im Graphen von B?</li><li>Wo fällt B am stärksten, und welchen Wert hat r dort?</li></ol>
+          <button id="revealButton" class="action">Vermutung nach der Besprechung einblenden</button>
+          <div id="result" class="result" hidden aria-live="polite">
+            <p>Die Änderungsrate beschreibt an jeder Stelle die Steigung des Bestands.</p><p class="formula">B′(u) = r(u)</p><p>Für den Tank folgt entsprechend:</p><p class="formula">M′(x) = z(x)</p>
+            <p class="notation"><strong>Warum einmal t, einmal x?</strong><br>z ist dieselbe Funktion. Im Integral läuft t von 0 bis zur Endzeit x. In z(x) wird die Rate genau an dieser Endzeit betrachtet.</p>
+          </div>
+        </section>
+        <section class="card">
+          <h2>Modell</h2>
+          <div id="modelTank"><p><strong>z(t) = −t² + 12t + 4</strong></p><p><strong>M(x) = ∫₀ˣ z(t) dt</strong></p><p class="small">t und x in Minuten, z(t) in Litern pro Minute, M(x) in Litern; der Tank ist zu Beginn leer.</p></div>
+          <div id="modelControl" hidden><p><strong>r(u) = (u − 1)(u − 3)</strong></p><p><strong>B: zweite dargestellte Funktion</strong></p><p class="small">Der Term von B wird nicht benötigt. Entscheidend sind Vorzeichen, Nullstellen und Steilheit der Graphen.</p></div>
+          <button id="resetButton" class="action secondary">Explorer zurücksetzen</button>
+        </section>
+      </aside>
+    </main>
+  </div>
+  <script>
+    "use strict";
+    const state={x:3,stage:1,revealed:false};
+    const colors={navy:"#123b5d",blue:"#1976a8",blueFill:"rgba(25,118,168,.22)",orange:"#c85f1d",grid:"#d9e2e8",muted:"#586775",paper:"#fff"};
+    const el={rateCanvas:document.getElementById("rateCanvas"),amountCanvas:document.getElementById("amountCanvas"),xSlider:document.getElementById("xSlider"),xOutput:document.getElementById("xOutput"),rateValue:document.getElementById("rateValue"),amountValue:document.getElementById("amountValue"),result:document.getElementById("result"),revealButton:document.getElementById("revealButton")};
+    function z(t){return -t*t+12*t+4;} function M(x){return -(x*x*x)/3+6*x*x+4*x;} function r(u){return (u-1)*(u-3);} function B(u){return u*u*u/3-2*u*u+3*u;}
+    function number(value,digits=1){return value.toLocaleString("de-DE",{minimumFractionDigits:digits,maximumFractionDigits:digits});}
+    function fitCanvas(canvas){const ratio=Math.max(1,window.devicePixelRatio||1);const rect=canvas.getBoundingClientRect();const pixelWidth=Math.round(rect.width*ratio);const pixelHeight=Math.round(rect.height*ratio);if(canvas.width!==pixelWidth||canvas.height!==pixelHeight){canvas.width=pixelWidth;canvas.height=pixelHeight;}const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);return{ctx,width:rect.width,height:rect.height};}
+    function axes(canvas,xMax,yMin,yMax,yStep,xLabel,yLabel){
+      const {ctx,width,height}=fitCanvas(canvas);const pad={left:58,right:18,top:16,bottom:38};const plot={left:pad.left,top:pad.top,right:width-pad.right,bottom:height-pad.bottom};const px=value=>plot.left+(value/xMax)*(plot.right-plot.left);const py=value=>plot.bottom-((value-yMin)/(yMax-yMin))*(plot.bottom-plot.top);
+      ctx.clearRect(0,0,width,height);ctx.fillStyle=colors.paper;ctx.fillRect(0,0,width,height);ctx.lineWidth=1;ctx.font="12px system-ui, sans-serif";ctx.textAlign="center";ctx.textBaseline="top";
+      for(let value=0;value<=Math.floor(xMax);value+=1){ctx.strokeStyle=colors.grid;ctx.beginPath();ctx.moveTo(px(value),plot.top);ctx.lineTo(px(value),plot.bottom);ctx.stroke();ctx.fillStyle=colors.muted;ctx.fillText(String(value),px(value),plot.bottom+8);}
+      ctx.textAlign="right";ctx.textBaseline="middle";const firstY=Math.ceil(yMin/yStep)*yStep;for(let value=firstY;value<=yMax+1e-9;value+=yStep){const clean=Math.abs(value)<1e-9?0:value;ctx.strokeStyle=colors.grid;ctx.beginPath();ctx.moveTo(plot.left,py(clean));ctx.lineTo(plot.right,py(clean));ctx.stroke();ctx.fillStyle=colors.muted;ctx.fillText(number(clean,Number.isInteger(yStep)?0:1),plot.left-8,py(clean));}
+      ctx.strokeStyle=colors.navy;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(plot.left,plot.top);ctx.lineTo(plot.left,plot.bottom);ctx.moveTo(plot.left,py(0));ctx.lineTo(plot.right,py(0));ctx.stroke();ctx.fillStyle=colors.navy;ctx.textAlign="right";ctx.textBaseline="bottom";ctx.fillText(xLabel,plot.right,height-3);ctx.save();ctx.translate(13,plot.top+5);ctx.rotate(-Math.PI/2);ctx.textAlign="right";ctx.fillText(yLabel,0,0);ctx.restore();return{ctx,px,py,plot};
+    }
+    function drawCurve(ctx,px,py,fn,xMax){ctx.strokeStyle=colors.blue;ctx.lineWidth=3;ctx.beginPath();for(let x=0;x<=xMax+.001;x+=.02){ctx[x===0?"moveTo":"lineTo"](px(x),py(fn(x)));}ctx.stroke();}
+    function drawSelectedPoint(ctx,px,py,fn){ctx.strokeStyle=colors.navy;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(px(state.x),py(0));ctx.lineTo(px(state.x),py(fn(state.x)));ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=colors.orange;ctx.beginPath();ctx.arc(px(state.x),py(fn(state.x)),5,0,Math.PI*2);ctx.fill();}
+    function drawTankRate(){const {ctx,px,py}=axes(el.rateCanvas,6.2,0,45,5,"t in min","z(t) in L/min");ctx.fillStyle=colors.blueFill;ctx.beginPath();ctx.moveTo(px(0),py(0));for(let t=0;t<=state.x+.001;t+=.02){const current=Math.min(t,state.x);ctx.lineTo(px(current),py(z(current)));}ctx.lineTo(px(state.x),py(0));ctx.closePath();ctx.fill();drawCurve(ctx,px,py,z,6);drawSelectedPoint(ctx,px,py,z);}
+    function drawTankAmount(){const {ctx,px,py}=axes(el.amountCanvas,6.2,0,180,20,"x in min","M(x) in L");if(state.stage===2)drawCurve(ctx,px,py,M,6);drawSelectedPoint(ctx,px,py,M);}
+    function drawControlRate(){const {ctx,px,py}=axes(el.rateCanvas,4.2,-1.5,3.5,1,"u","r(u)");drawCurve(ctx,px,py,r,4);drawSelectedPoint(ctx,px,py,r);}
+    function drawControlAmount(){const {ctx,px,py,plot}=axes(el.amountCanvas,4.2,0,1.6,.5,"u","B(u)");drawCurve(ctx,px,py,B,4);drawSelectedPoint(ctx,px,py,B);const left=Math.max(0,state.x-.42),right=Math.min(4,state.x+.42),tangent=u=>B(state.x)+r(state.x)*(u-state.x);ctx.save();ctx.beginPath();ctx.rect(plot.left,plot.top,plot.right-plot.left,plot.bottom-plot.top);ctx.clip();ctx.strokeStyle=colors.orange;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(px(left),py(tangent(left)));ctx.lineTo(px(right),py(tangent(right)));ctx.stroke();ctx.restore();}
+    function updateText(){const control=state.stage===3;document.getElementById("rateTitle").textContent=control?"Funktion r(u)":"Zuflussrate z(t)";document.getElementById("amountTitle").textContent=control?"Funktion B(u)":"Aufgelaufene Tankmenge M(x)";document.getElementById("rateHint").textContent=control?"Achten Sie auf Vorzeichen, Nullstellen und den kleinsten Wert von r.":"Die blaue Fläche reicht vom Start bis zur gewählten Endzeit x.";document.getElementById("amountHint").textContent=control?"Die orange Gerade zeigt die Tangente an B an der ausgewählten Stelle.":state.stage===1?"Zu jeder Endzeit x gehört genau ein Punkt (x | M(x)).":"Der Graph verbindet die Mengenwerte zu allen Endzeiten.";document.getElementById("rateLegend").textContent=control?"Funktion r":"Zuflussrate z(t)";document.getElementById("amountLegend").textContent=control?"Funktion B":"Mengenfunktion M";document.getElementById("areaLegend").hidden=control;document.getElementById("ratePointLegend").hidden=!control;document.getElementById("tangentLegend").hidden=!control;document.getElementById("controlTitle").textContent=control?"Stelle auswählen":"Endzeit verändern";document.getElementById("sliderLabel").textContent=control?"Stelle u":"Endzeit x in Minuten";document.getElementById("rateMetricLabel").textContent=control?"Wert r(u)":"Rate an der Endzeit";document.getElementById("amountMetricLabel").textContent=control?"Wert B(u)":"Menge bis zur Endzeit";document.getElementById("modelTank").hidden=control;document.getElementById("modelControl").hidden=!control;el.rateCanvas.setAttribute("aria-label",control?"Graph der Funktion r":"Graph der Zuflussrate mit markierter Fläche");el.amountCanvas.setAttribute("aria-label",control?"Graph der Funktion B mit Tangente":"Graph der aufgelaufenen Tankmenge");}
+    function render(){const control=state.stage===3;el.xSlider.max=control?"4":"6";el.xSlider.value=String(state.x);el.xOutput.textContent=number(state.x);el.rateValue.textContent=control?number(r(state.x)):`${number(z(state.x))} L/min`;el.amountValue.textContent=control?number(B(state.x)):`${number(M(state.x))} L`;el.result.hidden=!state.revealed;el.revealButton.textContent=state.revealed?"Vermutung wieder ausblenden":"Vermutung nach der Besprechung einblenden";updateText();if(control){drawControlRate();drawControlAmount();}else{drawTankRate();drawTankAmount();}document.querySelectorAll(".point-button").forEach(button=>button.setAttribute("aria-pressed",String(Number(button.dataset.point)===state.x)));}
+    function setStage(stage){state.stage=stage;state.revealed=false;state.x=stage===3?2:3;document.querySelectorAll(".stage-button").forEach(button=>button.setAttribute("aria-pressed",String(Number(button.dataset.stage)===stage)));document.querySelectorAll(".phase-panel").forEach(panel=>panel.hidden=Number(panel.dataset.panel)!==stage);render();}
+    el.xSlider.addEventListener("input",event=>{state.x=Number(event.target.value);render();});document.querySelectorAll(".stage-button").forEach(button=>button.addEventListener("click",()=>setStage(Number(button.dataset.stage))));document.querySelectorAll(".point-button").forEach(button=>button.addEventListener("click",()=>{state.x=Number(button.dataset.point);render();}));el.revealButton.addEventListener("click",()=>{state.revealed=!state.revealed;render();});document.getElementById("resetButton").addEventListener("click",()=>setStage(1));window.addEventListener("resize",render);render();
+  </script>
+</body>
+</html>

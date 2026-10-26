@@ -94,13 +94,13 @@ siehst du im Reiter <b>Versuch</b>.</p>
 <canvas id="buehne"></canvas>
 
 <div class="mess" id="messzeile">
-  <div class="messwert"><span class="lbl tagA">Marke A</span><span id="posA">&minus;13,0 mm</span></div>
+  <div class="messwert"><span class="lbl tagA">Marke A</span><span id="posA">&minus;30,0 mm</span></div>
   <button class="small" data-nudge="A-">A &#9664;</button>
   <button class="small" data-nudge="A+">A &#9654;</button>
-  <div class="messwert"><span class="lbl tagB">Marke B</span><span id="posB">+13,0 mm</span></div>
+  <div class="messwert"><span class="lbl tagB">Marke B</span><span id="posB">+30,0 mm</span></div>
   <button class="small" data-nudge="B-">B &#9664;</button>
   <button class="small" data-nudge="B+">B &#9654;</button>
-  <div class="messwert"><span class="lbl">Abstand A&ndash;B</span><span class="abstand" id="abstand">26,0 mm</span></div>
+  <div class="messwert"><span class="lbl">Abstand A&ndash;B</span><span class="abstand" id="abstand">60,0 mm</span></div>
 </div>
 
 <div class="panel" id="panelAnzeige" style="margin-top:12px;">
@@ -127,7 +127,7 @@ siehst du im Reiter <b>Versuch</b>.</p>
   </div>
   <div id="tabelleBox"></div>
   <p class="hint" style="margin:8px 0 0;">
-    Diese Liste ist nur eine Ged&auml;chtnisst&uuml;tze. &Uuml;bertrage deine Werte auf den Messstreifen.
+    Diese Liste ist nur eine Ged&auml;chtnisst&uuml;tze. &Uuml;bertrage deine Werte in die Tabelle auf dem Arbeitsblatt.
   </p>
 </div>
 
@@ -166,8 +166,8 @@ siehst du im Reiter <b>Versuch</b>.</p>
 </div>
 
 <p class="fuss">
-  <b>Feste Gr&ouml;&szlig;en:</b> Schirmabstand <b>L&nbsp;=&nbsp;2,00&nbsp;m</b>,
-  Wellenl&auml;nge <span id="lamText">650&nbsp;nm (rot)</span>.
+  <b>Fest:</b> Schirmabstand <b>L&nbsp;=&nbsp;2,00&nbsp;m</b>.
+  <b>Gew&auml;hlt:</b> Wellenl&auml;nge <span id="lamText">650&nbsp;nm (rot)</span>.
   Die Anzeige ist berechnet, nicht fotografiert.
 </p>
 
@@ -231,6 +231,7 @@ function intensitaet(x, b, lam, L){
 var LAM = {rot:650e-9, gruen:532e-9, blau:405e-9};
 var RGB = {rot:[255,48,36], gruen:[70,255,105], blau:[150,70,255]};
 var NAM = {rot:"650&nbsp;nm (rot)", gruen:"532&nbsp;nm (gr&uuml;n)", blau:"405&nbsp;nm (violett)"};
+var KURZ = {rot:"rot", gruen:"grün", blau:"violett"};
 
 var L    = 2.0;                 /* Schirmabstand in m */
 var VOLL = 45;                  /* halbe Gesamtbreite des Schirms in mm */
@@ -244,7 +245,7 @@ var VIEWS = [
 ];
 
 var st = { b:0.10e-3, farbe:"rot", kurve:false, view:0,
-           mA:-13, mB:13, refB:null, tab:"versuch", lichtweg:false, tabelle:[] };
+           mA:-30, mB:30, refB:null, tab:"versuch", lichtweg:false, tabelle:[] };
 
 function V(){ return VIEWS[st.view]; }
 function fmt(x,n){ return x.toFixed(n).replace(".", ","); }
@@ -400,7 +401,7 @@ for (var i=0;i<nudger.length;i++){
 /* Messwerttabelle */
 var tabelleBox = document.getElementById("tabelleBox");
 document.getElementById("uebernehmen").addEventListener("click", function(){
-  st.tabelle.push({ b: st.b*1000, a: st.mA, c: st.mB, d: Math.abs(st.mB-st.mA), dez: V().dez });
+  st.tabelle.push({ b: st.b*1000, f: KURZ[st.farbe], a: st.mA, c: st.mB, d: Math.abs(st.mB-st.mA), dez: V().dez });
   if (st.tabelle.length > 14) st.tabelle.shift();
   zeichneTabelle();
 });
@@ -415,9 +416,9 @@ function zeichneTabelle(){
     tabelleBox.innerHTML = '<p class="leer">Noch keine Werte &uuml;bernommen.</p>';
     return;
   }
-  var h = '<table><tr><th>Spaltbreite</th><th>Marke A</th><th>Marke B</th><th>Abstand A&ndash;B</th></tr>';
+  var h = '<table><tr><th>Spaltbreite</th><th>Farbe</th><th>Marke A</th><th>Marke B</th><th>Abstand A&ndash;B</th></tr>';
   st.tabelle.forEach(function(z){
-    h += '<tr><td>' + fmt(z.b,3) + ' mm</td><td>' + fmt(z.a,z.dez) + '</td><td>' +
+    h += '<tr><td>' + fmt(z.b,3) + ' mm</td><td>' + z.f + '</td><td>' + fmt(z.a,z.dez) + '</td><td>' +
          fmt(z.c,z.dez) + '</td><td><b>' + fmt(z.d,z.dez) + ' mm</b></td></tr>';
   });
   tabelleBox.innerHTML = h + '</table>';
@@ -640,7 +641,7 @@ function zeichneAufbau(){
   ctx.fillRect(xQ-2, yM-14, 4, 28);
   ctx.fillStyle = "#9aa4b8"; ctx.textAlign = "center";
   ctx.fillText("Lichtquelle", xQ-15, yM+46);
-  ctx.fillText("rotes Licht", xQ-15, yM+62);
+  ctx.fillText(fmt(lam*1e9,0) + " nm", xQ-15, yM+62);
 
   /* paralleles Buendel bis zum Spalt */
   ctx.strokeStyle = "rgba("+col[0]+","+col[1]+","+col[2]+",0.55)";

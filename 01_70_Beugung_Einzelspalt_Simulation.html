@@ -73,7 +73,7 @@
 <body>
 
 <h1>Licht am Einzelspalt</h1>
-<p class="sub">Rotes Licht f&auml;llt auf einen schmalen Spalt. Was auf dem Schirm ankommt,
+<p class="sub">Laserlicht f&auml;llt auf einen schmalen Spalt. Was auf dem Schirm ankommt,
 siehst du im Reiter <b>Versuch</b>.</p>
 
 <div class="tabs" id="tabs"></div>
@@ -114,7 +114,7 @@ siehst du im Reiter <b>Versuch</b>.</p>
     <button id="reset">Marken zur&uuml;cksetzen</button>
   </div>
   <div class="trenner"></div>
-  <h2>Zusatz: Lichtfarbe</h2>
+  <h2>Lichtfarbe</h2>
   <div class="row" id="farben"></div>
 </div>
 
@@ -158,8 +158,9 @@ siehst du im Reiter <b>Versuch</b>.</p>
         So siehst du direkt, was sich &auml;ndert.</li>
     <li>Die <b>Helligkeit</b> wird f&uuml;r jede Spaltbreite neu angepasst, wie bei einer Kamera.
         Vergleichbar sind die Breiten, nicht die Helligkeiten.</li>
-    <li>Fest eingestellt und nicht ver&auml;nderbar: Schirmabstand <b>L = 2,00 m</b>,
-        Wellenl&auml;nge <b>650 nm</b>.</li>
+    <li>Fest eingestellt und nicht ver&auml;nderbar: Schirmabstand <b>L = 2,00 m</b>.
+        Die <b>Wellenl&auml;nge</b> w&auml;hlst du unter <b>Lichtfarbe</b>: 650&nbsp;nm, 532&nbsp;nm
+        oder 405&nbsp;nm, wie bei unseren Laserpointern. Ver&auml;ndere immer nur eine Gr&ouml;&szlig;e.</li>
     <li>Dies ist ein <b>berechnetes Modell</b>, kein Foto.</li>
   </ul>
 </div>
@@ -227,9 +228,9 @@ function intensitaet(x, b, lam, L){
 /* =================================================================
    Zustand
    ================================================================= */
-var LAM = {rot:650e-9, gruen:532e-9, blau:450e-9};
-var RGB = {rot:[255,48,36], gruen:[70,255,105], blau:[95,130,255]};
-var NAM = {rot:"650&nbsp;nm (rot)", gruen:"532&nbsp;nm (gr&uuml;n)", blau:"450&nbsp;nm (blau)"};
+var LAM = {rot:650e-9, gruen:532e-9, blau:405e-9};
+var RGB = {rot:[255,48,36], gruen:[70,255,105], blau:[150,70,255]};
+var NAM = {rot:"650&nbsp;nm (rot)", gruen:"532&nbsp;nm (gr&uuml;n)", blau:"405&nbsp;nm (violett)"};
 
 var L    = 2.0;                 /* Schirmabstand in m */
 var VOLL = 45;                  /* halbe Gesamtbreite des Schirms in mm */
@@ -344,7 +345,7 @@ markiereZoom();
 var farbBox = document.getElementById("farben");
 ["rot","gruen","blau"].forEach(function(f){
   var el = document.createElement("button");
-  el.textContent = (f==="rot") ? "rot" : (f==="gruen" ? "grün" : "blau");
+  el.textContent = (f==="rot") ? "rot 650 nm" : (f==="gruen" ? "grün 532 nm" : "violett 405 nm");
   el.setAttribute("data-farbe", f);
   el.addEventListener("click", function(){
     st.farbe = f; lamText.innerHTML = NAM[f]; markiereFarbe(); anfordern();
